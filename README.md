@@ -5,10 +5,15 @@
 python模块: requests,pymysql
 
 qq命令:</br>
-!stats osu_username
+!stats osu_username</br>
+qqbot只支持发送群信息
+
 
 目录说明：</br>
-login.py: 主程序(太随意)</br>
-login.txt: 保存登录信息(包括cookies等)</br>
+login.py: 主程序(太随意,后续版本可能会改进)</br>
+login.txt: 保存登录信息(包括cookies等,由于偷懒txt必须手动创建)</br>
 qrcode.png: 登录用的二维码,会自动生成</br>
 start.bat: 执行脚本</br>
+
+smartqq协议登录参考了</br>
+https://www.fkgeek.com/archives/59
