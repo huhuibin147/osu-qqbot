@@ -109,13 +109,6 @@ class Login(object):
             'Origin':'http://d1.web2.qq.com'
         }
         
-        
-        d = {
-            "ptwebqq": self.ptwebqq,
-            "clientid": 53999199,
-            "psessionid": self.psessionid,
-            "key": ""
-        }
         data = {
             'r' : '{"ptwebqq":"'+self.ptwebqq+'","clientid":53999199,"psessionid":"'+self.psessionid+'","key":""}'
         }
