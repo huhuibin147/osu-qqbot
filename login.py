@@ -1,11 +1,15 @@
 # -*- coding:utf-8 -*-
 import requests
 import time
+import datetime
 import json
 import logging
 import traceback
 import pymysql
 import datetime
+import random
+import sched
+import threading
 
 class Login(object):
     def __init__(self):
@@ -23,7 +27,8 @@ class Login(object):
         self.psessionid = ''
         self.vfwebqq = ''
         self.ptwebqq = ''
-        self.con=''
+        self.con = ''
+        self.roll_list = ['int100被你们roll坏了']
 
 
     def run(self):
@@ -109,6 +114,7 @@ class Login(object):
             'Origin':'http://d1.web2.qq.com'
         }
         
+        
         data = {
             'r' : '{"ptwebqq":"'+self.ptwebqq+'","clientid":53999199,"psessionid":"'+self.psessionid+'","key":""}'
         }
@@ -175,34 +181,12 @@ class Login(object):
             self.vfwebqq = login_info.get('vfwebqq')
             self.ptwebqq = login_info.get('ptwebqq')
 
-    def check_msg(self,msg,group_uin,user_uin):
+    
+        
 
-        if msg and '!stats' in msg:
-            #self.send('没有pp,下一个!!',group_uin)
-            s_msg = self.osu_stats(msg[7:])
-            if s_msg:
-                self.send(str(s_msg),group_uin)
-            else:
-                self.send('没有pp,下一个!!',group_uin)
-            return
-
-        if msg and '!roll' in msg:
-            self.send('int100被你们roll坏了',group_uin)
-            return
-
-        if msg and '!r' in msg:
-            #self.getUser(user_uin)
-            self.send('你想被日吗??',group_uin)
-            return
-
-        if msg and '!get' in msg:
-            s_msg = self.get_user_fromDB(msg[5:])
-            if s_msg:
-                self.send(str(s_msg),group_uin)
-            else:
-                self.send('不认识你走开,下一个!!',group_uin)
-            return
-            
+    def getRoll(self):
+        index =random.randint(0,len(self.roll_list)-1)
+        return self.roll_list[index]
 
     def get_con(self):
         self.con = pymysql.connect(host='127.0.0.1',user='root',password='123456',db='osu')
@@ -214,7 +198,7 @@ class Login(object):
 
     def insert_user(self,*user):
         cur = self.get_cursor()
-        sql = 'insert into user(username,pp,acc,pc,rank,tth,time) values(%s,%s,%s,%s,%s,%s,%s)'
+        sql = 'insert into user2(username,pp,acc,pc,rank,tth,time) values(%s,%s,%s,%s,%s,%s,%s)'
         result = cur.execute(sql,tuple(user))
         logging.info('插入数据结果:'+str(result))
         self.con.commit()
@@ -222,12 +206,13 @@ class Login(object):
     def get_user_fromDB(self,username,**kwargs):
         cur = self.get_cursor()
         if not kwargs:
-            now = datetime.datetime.now()
-            yday = now - datetime.timedelta(days=1)
-            yday = yday.strftime('%Y-%m-%d %H:%M:%S')
-            sql = 'select * from user where username=%s and time>=%s limit 1'
-            logging.info('查询时间:'+yday)
-        result = cur.execute(sql,(username,yday))
+            if self.is_today():
+                time = self.get_today()
+            else:
+                time = self.get_yes()
+            sql = 'select * from user2 where username=%s and time>=%s limit 1'
+            logging.info('查询时间:'+time)
+        result = cur.execute(sql,(username,time))
         logging.info('查询数据结果:'+str(result))
         if result:
             user_info = cur.fetchall()
@@ -235,6 +220,22 @@ class Login(object):
             return user_info
         else:
             return ''
+
+    def get_user_list_fromDB(self):
+        logging.info('查询用户列表..')
+        cur = self.get_cursor()
+        sql = 'SELECT username from user2 GROUP BY username'
+        result = cur.execute(sql)
+        user_list = cur.fetchall()
+        return user_list
+
+    def exist_user(self,uid):
+        #logging.info('查询用户是否存在')
+        cur = self.get_cursor()
+        sql = 'SELECT 1 from user2 where username="'+uid+'" limit 1'
+        result = cur.execute(sql)
+        user_list = cur.fetchall()
+        return user_list
 
     def osu_stats(self,uid):
         try:
@@ -266,12 +267,12 @@ class Login(object):
                 info = u_db_info[0]
                 add_pp = str(round(in_pp - float(info[2]),2))
                 add_rank = info[5] - int(rank)
-                if add_rank > 0:
+                if add_rank >= 0:
                     add_rank = '+'+str(add_rank)
                 else:
                     add_rank = str(add_rank)
                 add_acc =  round(acc1 - float(info[3]),2)
-                if add_acc >0.0:
+                if add_acc >=0.0:
                     add_acc = '+'+str(add_acc)
                 else:
                     add_acc = str(add_acc)
@@ -280,15 +281,159 @@ class Login(object):
                 d = username+'\n'+pp+'pp(+'+add_pp+')\n'+'rank: '+rank+'('+add_rank+')\n'+'acc : '+acc+'%('+add_acc+')\n'+'pc  : '+pc+'pc(+'+add_pc+')\n'+'tth  : '+tth_w+'w(+'+add_tth+')'
             else:
                 d = username+'\n'+pp+'pp(+0)\n'+'rank: '+rank+'(+0)\n'+'acc : '+acc+'%(+0)\n'+'pc  : '+pc+'pc(+0)\n'+'tth  : '+tth_w+'w(+0)'
-            in_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-            self.insert_user(username,in_pp,acc1,pc,rank,tth,in_time)
+            #in_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+            is_exist = self.exist_user(uid)
+            if not is_exist:
+                logging.info('用户不存在,进行插入')
+                #检测时间段0-9点
+                if self.is_today():
+                    in_time = self.get_today()
+                else:
+                    in_time = self.get_yes()
+                self.insert_user(username,in_pp,acc1,pc,rank,tth,in_time)
             self.con.close()
             return d
         except:
             traceback.print_exc()
 
+    def getU(self,uid):
+        try:
+            logging.info('获取用户:'+uid)
+            res = requests.get('https://osu.ppy.sh/api/get_user?k=b68fc239f6b8bdcbb766320bf4579696c270b349&u='+str(uid),timeout=2)
+        except:
+            logging.info('获取失败:'+uid)
+            res = ''
+        return res
 
-if __name__ == '__main__':
+    def get_today(self):
+        today = datetime.date.today()
+        return str(today)+' 9:00:00'
+
+    def get_yes(self):
+        now = datetime.datetime.now()
+        date = now - datetime.timedelta(days = 1)
+        return date.strftime('%Y-%m-%d')+' 9:00:00'
+
+    def is_today(self):
+        #0昨天 1今天
+        now_hour = time.strftime("%H%M%S")
+        cmp_hour = 90000
+        if int(now_hour) - cmp_hour < 0:
+            return 0
+        else:
+            return 1
+
+    def is_insert_today(self):
+        cur = self.get_cursor()
+        time = self.get_today()
+        sql = 'SELECT 1 from user2 where time="'+time+'" LIMIT 1'
+        result = cur.execute(sql)
+        user_list = cur.fetchall()
+        return user_list
+
+    def auto_inert(self):
+        try:
+            u_tuple = self.get_user_list_fromDB()
+            u_list = list(u_tuple)#[('xxx',),('xxx,')]
+            today = datetime.date.today()
+            in_time = str(today)+' 9:00:00'
+            for uid in u_list:
+                uid = uid[0]
+                res = self.getU(uid)
+                while not res:
+                    res = self.getU(uid)
+
+                result = json.loads(res.text)            
+                result = result[0]
+                username = result['username']
+                pp = result['pp_raw']
+                in_pp = float(pp)
+                rank = result['pp_rank']
+                acc1 = round(float(result['accuracy']),2)
+                pc =  result['playcount']
+                count300 = result['count300']
+                count100 = result['count100']
+                count50 = result['count50']
+                tth = eval(count300)+eval(count50)+eval(count100)
+                self.insert_user(username,in_pp,acc1,pc,rank,tth,in_time)
+                logging.info(uid+'插入成功')
+            self.con.close()
+        except:
+            logging.info('auto_inert错误')
+            self.con.close()
+
+    def insert_forday(self):
+        logging.info('开始执行定时插入任务')
+        self.auto_inert()
+        logging.info('定时插入任务结束')
+
+    def time_insert(self):
+        '''定时任务'''
+        today = datetime.date.today()
+        now_hour = time.strftime('%H%M%S')
+        is_run = int(now_hour) - 90000
+        if  is_run < 0:
+            logging.info('延时执行')
+            now = datetime.datetime.now()
+            stats = datetime.datetime(today.year,today.month,today.day,9,0,0)
+            delay = (stats - now).seconds
+            print(delay)
+            s = sched.scheduler(time.time, time.sleep)
+            s.enter(delay,0,self.insert_forday,())
+            s.run()
+        else:
+            logging.info('超过时间,立即执行定时任务')
+            if not self.is_insert_today():
+                logging.info('今日数据不存在,准备抓取...')
+            else:
+                logging.info('今日数据已存在,不需要抓取')
+            #self.insert_forday()
+            logging.info('定时任务结束')
+            
+    
+    def check_msg(self,msg,group_uin,user_uin):
+
+        if msg and '!stats' in msg:
+            #self.send('没有pp,下一个!!',group_uin)
+            s_msg = self.osu_stats(msg[7:])
+            if s_msg:
+                self.send(str(s_msg),group_uin)
+            else:
+                self.send('没有pp,下一个!!',group_uin)
+            return
+
+        if msg and '!roll' in msg:
+            send_msg = self.getRoll()
+            self.send(send_msg,group_uin)
+            return
+
+        if msg and '!setroll' in msg:
+            msg_l = msg.split(' ')
+            self.roll_list.append(msg_l[1])
+            return
+
+        if msg and '!resetroll' in msg:
+            self.roll_list = ['int100被你们roll坏了']
+            return
+
+        if msg and '!help' in msg:
+            self.send('我并不打算help了你!!',group_uin)
+            return
+            
+        if msg and '!ri' in msg:
+            #self.getUser(user_uin)
+            self.send('你想被日吗??',group_uin)
+            return
+
+        if msg and '!get' in msg:
+            s_msg = self.get_user_fromDB(msg[5:])
+            if s_msg:
+                self.send(str(s_msg),group_uin)
+            else:
+                self.send('不认识你走开,下一个!!',group_uin)
+            return  
+
+def qqbot_main():
     l = Login()
     try:
         l.before_login()
@@ -305,3 +450,19 @@ if __name__ == '__main__':
         except:
             traceback.print_exc() 
 
+def sched_day_insert():
+    l = Login()
+    try:
+        l.time_insert()
+    except:
+        logging.info('定时任务出错')
+        traceback.print_exc()
+
+if __name__ == '__main__':
+    try:
+        sched_t = threading.Thread(target=sched_day_insert)
+        main_t = threading.Thread(target=qqbot_main)
+        sched_t.start()
+        main_t.start()
+    except:
+        traceback.print_exc()
