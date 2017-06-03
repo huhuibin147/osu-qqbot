@@ -385,9 +385,10 @@ class Login(object):
             logging.info('超过时间,立即执行定时任务')
             if not self.is_insert_today():
                 logging.info('今日数据不存在,准备抓取...')
+                self.insert_forday()
             else:
                 logging.info('今日数据已存在,不需要抓取')
-            #self.insert_forday()
+            
             logging.info('定时任务结束')
             
     
