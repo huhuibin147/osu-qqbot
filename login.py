@@ -181,6 +181,7 @@ class Login(object):
             self.vfwebqq = login_info.get('vfwebqq')
             self.ptwebqq = login_info.get('ptwebqq')
 
+<<<<<<< HEAD
     def check_msg(self,msg,group_uin,user_uin):
 
         if msg and '!stats' in msg:
@@ -224,6 +225,11 @@ class Login(object):
             return
         
 
+=======
+    
+        
+
+>>>>>>> 07857b4e3def03aec5e6741ff9c1528549172c02
     def getRoll(self):
         index =random.randint(0,len(self.roll_list)-1)
         return self.roll_list[index]
@@ -344,11 +350,19 @@ class Login(object):
             logging.info('获取失败:'+uid)
             res = ''
         return res
+<<<<<<< HEAD
 
     def get_today(self):
         today = datetime.date.today()
         return str(today)+' 9:00:00'
 
+=======
+
+    def get_today(self):
+        today = datetime.date.today()
+        return str(today)+' 9:00:00'
+
+>>>>>>> 07857b4e3def03aec5e6741ff9c1528549172c02
     def get_yes(self):
         now = datetime.datetime.now()
         date = now - datetime.timedelta(days = 1)
@@ -425,12 +439,63 @@ class Login(object):
             logging.info('超过时间,立即执行定时任务')
             if not self.is_insert_today():
                 logging.info('今日数据不存在,准备抓取...')
+<<<<<<< HEAD
             else:
                 logging.info('今日数据已存在,不需要抓取')
             #self.insert_forday()
             logging.info('定时任务结束')
             
         
+=======
+                self.insert_forday()
+            else:
+                logging.info('今日数据已存在,不需要抓取')
+            
+            logging.info('定时任务结束')
+            
+    
+    def check_msg(self,msg,group_uin,user_uin):
+
+        if msg and '!stats' in msg:
+            #self.send('没有pp,下一个!!',group_uin)
+            s_msg = self.osu_stats(msg[7:])
+            if s_msg:
+                self.send(str(s_msg),group_uin)
+            else:
+                self.send('没有pp,下一个!!',group_uin)
+            return
+
+        if msg and '!roll' in msg:
+            send_msg = self.getRoll()
+            self.send(send_msg,group_uin)
+            return
+
+        if msg and '!setroll' in msg:
+            msg_l = msg.split(' ')
+            self.roll_list.append(msg_l[1])
+            return
+
+        if msg and '!resetroll' in msg:
+            self.roll_list = ['int100被你们roll坏了']
+            return
+
+        if msg and '!help' in msg:
+            self.send('我并不打算help了你!!',group_uin)
+            return
+            
+        if msg and '!ri' in msg:
+            #self.getUser(user_uin)
+            self.send('你想被日吗??',group_uin)
+            return
+
+        if msg and '!get' in msg:
+            s_msg = self.get_user_fromDB(msg[5:])
+            if s_msg:
+                self.send(str(s_msg),group_uin)
+            else:
+                self.send('不认识你走开,下一个!!',group_uin)
+            return  
+>>>>>>> 07857b4e3def03aec5e6741ff9c1528549172c02
 
 def qqbot_main():
     l = Login()
@@ -465,6 +530,9 @@ if __name__ == '__main__':
         main_t.start()
     except:
         traceback.print_exc()
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> 07857b4e3def03aec5e6741ff9c1528549172c02
