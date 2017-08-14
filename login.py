@@ -181,7 +181,7 @@ class Login(object):
             self.vfwebqq = login_info.get('vfwebqq')
             self.ptwebqq = login_info.get('ptwebqq')
 
-<<<<<<< HEAD
+
     def check_msg(self,msg,group_uin,user_uin):
 
         if msg and '!stats' in msg:
@@ -225,11 +225,7 @@ class Login(object):
             return
         
 
-=======
-    
-        
 
->>>>>>> 07857b4e3def03aec5e6741ff9c1528549172c02
     def getRoll(self):
         index =random.randint(0,len(self.roll_list)-1)
         return self.roll_list[index]
@@ -350,13 +346,12 @@ class Login(object):
             logging.info('获取失败:'+uid)
             res = ''
         return res
-<<<<<<< HEAD
+
 
     def get_today(self):
         today = datetime.date.today()
         return str(today)+' 9:00:00'
 
-=======
 
     def get_today(self):
         today = datetime.date.today()
@@ -439,14 +434,13 @@ class Login(object):
             logging.info('超过时间,立即执行定时任务')
             if not self.is_insert_today():
                 logging.info('今日数据不存在,准备抓取...')
-<<<<<<< HEAD
+
             else:
                 logging.info('今日数据已存在,不需要抓取')
             #self.insert_forday()
             logging.info('定时任务结束')
             
-        
-=======
+
                 self.insert_forday()
             else:
                 logging.info('今日数据已存在,不需要抓取')
@@ -495,7 +489,7 @@ class Login(object):
             else:
                 self.send('不认识你走开,下一个!!',group_uin)
             return  
->>>>>>> 07857b4e3def03aec5e6741ff9c1528549172c02
+
 
 def qqbot_main():
     l = Login()
@@ -530,9 +524,4 @@ if __name__ == '__main__':
         main_t.start()
     except:
         traceback.print_exc()
-<<<<<<< HEAD
 
-
-
-=======
->>>>>>> 07857b4e3def03aec5e6741ff9c1528549172c02
