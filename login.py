@@ -357,7 +357,6 @@ class Login(object):
         today = datetime.date.today()
         return str(today)+' 9:00:00'
 
->>>>>>> 07857b4e3def03aec5e6741ff9c1528549172c02
     def get_yes(self):
         now = datetime.datetime.now()
         date = now - datetime.timedelta(days = 1)
