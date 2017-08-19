@@ -10,6 +10,8 @@ import datetime
 import random
 import sched
 import threading
+import mods
+import re
 
 class Login(object):
     def __init__(self):
@@ -433,30 +435,92 @@ class Login(object):
             logging.info('超过时间,立即执行定时任务')
             if not self.is_insert_today():
                 logging.info('今日数据不存在,准备抓取...')
-
+                self.insert_forday()
             else:
                 logging.info('今日数据已存在,不需要抓取')
             #self.insert_forday()
             logging.info('定时任务结束')
-            
-
-                self.insert_forday()
-            else:
-                logging.info('今日数据已存在,不需要抓取')
-            
-            logging.info('定时任务结束')
-            
     
+    def get_bp(self, uid):
+        try:
+            res = requests.get('https://osu.ppy.sh/api/get_user_best?k=b68fc239f6b8bdcbb766320bf4579696c270b349&u='+str(uid),timeout=3)
+            s_msg = '请开始你的表演!!\n'
+            if not res:
+                return '没有Bp,下一个!!'
+            beatmap_pre = 'https://osu.ppy.sh/b/%s'
+            result = json.loads(res.text)
+            for r in result[0:5]:
+                beatmap = beatmap_pre % r['beatmap_id']
+                s_msg = s_msg + beatmap +'\n'
+            return s_msg[0:-1]
+        except:
+            logging.info('获取%s的bp失败'% str(uid))
+            return '没有Bp,下一个!!'
+    
+    def get_bp_info(self, uid):
+        try:
+            res = requests.get('https://osu.ppy.sh/api/get_user_best?k=b68fc239f6b8bdcbb766320bf4579696c270b349&u='+str(uid),timeout=3)
+            if not res:
+                return '没有Bp,下一个!!'
+            s_msg = str(uid)+"'s bp!!\n"
+            result = json.loads(res.text)
+            for i,r in enumerate(result[0:5]):
+                msg = 'bp{x},{pp}pp,{acc}%,{rank},+{mod}'
+                c50 = float(r['count50'])
+                c100 = float(r['count100'])
+                c300 = float(r['count300'])
+                cmiss = float(r['countmiss'])
+                acc = round((c50*50+c100*100+c300*300)/(c50+c100+c300+cmiss)/300*100,2)
+                msg = msg.format(x=i+1,pp=round(float(r['pp'])),acc=acc,rank=r['rank'],mod=','.join(mods.getMod(int(r['enabled_mods']))))
+                s_msg = s_msg + msg + '\n'
+            return s_msg[0:-1]
+        except:
+            logging.info('获取%s的bp失败'% str(uid))
+            return '没有Bp,下一个!!'
+
+    def check_user(self, uid):
+        msg_list = ['%s这么恐怖，肯定是小号!!','%s是inter认定的非小号!!']
+        s_msg = (random.choice(msg_list)) % str(uid)
+        return s_msg
+
+    def get_skill(self, uid):
+        try:
+            res = requests.get('http://osuskills.tk/user/'+str(uid),timeout=5)
+            if not res:
+                return '没有数据,太弱了!!'
+            s_msg = uid+"'s skill\n"
+            value = re.compile(r'<output class="skillValue">(.*?)</output>')
+            values = value.findall(res.text)
+            skills = ['Stamina', 'Tenacity', 'Agility', 'Accuracy', 'Precision', 'Reaction', 'Memory', 'Reading']
+            #skills_list = list(map(lambda x,y:x+y ,skills,values))
+            for i,s in enumerate(skills):
+                val = int(values[i])
+                if  1000 > val >= 100:
+                    snum = int(values[i][0:1])
+                elif val >= 1000:
+                    snum = int(values[i][0:2])
+                else:
+                    snum = 0
+                star = '*' * snum
+                skillkey = '%s:' % s
+                valueskey = '%s ' % values[i]
+                s_msg = s_msg+skillkey+valueskey+star+'\n'
+            return s_msg[0:-1]
+        except:
+            logging.info(traceback.print_exc())
+            logging.info('获取%s的skills失败'% str(uid))
+            return '没有数据,太弱了!!'
+
     def check_msg(self,msg,group_uin,user_uin):
 
-        if msg and '!stats' in msg:
-            #self.send('没有pp,下一个!!',group_uin)
-            s_msg = self.osu_stats(msg[7:])
-            if s_msg:
-                self.send(str(s_msg),group_uin)
-            else:
-                self.send('没有pp,下一个!!',group_uin)
-            return
+        # if msg and '!stats' in msg:
+        #     #self.send('没有pp,下一个!!',group_uin)
+        #     s_msg = self.osu_stats(msg[7:])
+        #     if s_msg:
+        #         self.send(str(s_msg),group_uin)
+        #     else:
+        #         self.send('没有pp,下一个!!',group_uin)
+        #     return
 
         if msg and '!roll' in msg:
             send_msg = self.getRoll()
@@ -468,12 +532,37 @@ class Login(object):
             self.roll_list.append(msg_l[1])
             return
 
+        if msg and '!bbp' in msg:
+            s_msg = self.get_bp_info(msg[5:])
+            self.send(s_msg, group_uin)
+            return
+
+        if msg and '!baobp' in msg:
+            s_msg = self.get_bp(msg[7:])
+            self.send(s_msg, group_uin)
+            return
+
+        if msg and '!skill' in msg:
+            s_msg = self.get_skill(msg[7:])
+            self.send(s_msg, group_uin)
+            return
+
+        if msg and '!' in msg and 'louxinye' in msg:
+            msg_list = ['dalou太强了!!','dalou我偶像!!']
+            self.send(random.choice(msg_list),group_uin)
+            return
+
+        if msg and '!check' in msg:
+            s_msg = self.check_user(msg[7:])
+            self.send(s_msg, group_uin)
+            return
+
         if msg and '!resetroll' in msg:
             self.roll_list = ['int100被你们roll坏了']
             return
 
         if msg and '!help' in msg:
-            self.send('我并不打算help了你!!',group_uin)
+            self.send('我并不打算help你!!',group_uin)
             return
             
         if msg and '!ri' in msg:
@@ -481,13 +570,13 @@ class Login(object):
             self.send('你想被日吗??',group_uin)
             return
 
-        if msg and '!get' in msg:
-            s_msg = self.get_user_fromDB(msg[5:])
-            if s_msg:
-                self.send(str(s_msg),group_uin)
-            else:
-                self.send('不认识你走开,下一个!!',group_uin)
-            return  
+        # if msg and '!get' in msg:
+        #     s_msg = self.get_user_fromDB(msg[5:])
+        #     if s_msg:
+        #         self.send(str(s_msg),group_uin)
+        #     else:
+        #         self.send('不认识你走开,下一个!!',group_uin)
+        #     return  
 
 
 def qqbot_main():
@@ -497,7 +586,7 @@ def qqbot_main():
         l.getMsg()
         #logging.info('自动登录成功!')
     except:
-        traceback.print_exc() 
+        logging.info(traceback.print_exc())
         logging.info('登录信息过期!')
         info = l.run()
     while True: 
@@ -505,7 +594,7 @@ def qqbot_main():
             msg,group_uin,user_uin = l.getMsg()
             l.check_msg(msg,group_uin,user_uin)
         except:
-            traceback.print_exc() 
+            logging.info(traceback.print_exc())
 
 def sched_day_insert():
     l = Login()
@@ -513,14 +602,14 @@ def sched_day_insert():
         l.time_insert()
     except:
         logging.info('定时任务出错')
-        traceback.print_exc()
+        logging.info(traceback.print_exc())
 
 if __name__ == '__main__':
     try:
-        sched_t = threading.Thread(target=sched_day_insert)
+        # sched_t = threading.Thread(target=sched_day_insert)
         main_t = threading.Thread(target=qqbot_main)
-        sched_t.start()
+        # sched_t.start()
         main_t.start()
     except:
-        traceback.print_exc()
+        logging.info(traceback.print_exc())
 
