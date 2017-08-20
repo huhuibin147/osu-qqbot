@@ -12,6 +12,8 @@ import sched
 import threading
 import mods
 import re
+import Config
+import html.parser
 
 class Login(object):
     def __init__(self):
@@ -31,6 +33,9 @@ class Login(object):
         self.ptwebqq = ''
         self.con = ''
         self.roll_list = ['int100被你们roll坏了']
+        self.wzq_qipan = []
+        self.wzq_color = 0 #黑
+        self.size = 10
 
 
     def run(self):
@@ -511,6 +516,107 @@ class Login(object):
             logging.info('获取%s的skills失败'% str(uid))
             return '没有数据,太弱了!!'
 
+    def skill_vs(self,uid,uid2):
+        try:
+            res = requests.get('http://osuskills.tk/user/%s/vs/%s'%(uid,uid2),timeout=5)
+            if not res:
+                return '实力太强p坏了,你们还是去床上解决吧!!'
+            value = re.compile(r'<output class="skillValue">(.*?)</output>')
+            values = value.findall(res.text)
+            skills = ['Stamina', 'Tenacity', 'Agility', 'Accuracy', 'Precision', 'Reaction', 'Memory', 'Reading']
+            s_msg = '%s vs %s\n'%(uid,uid2)
+            for i,s in enumerate(skills):
+                v1 = int(values[i])
+                v2 = int(values[i+8])
+                vv = str(abs(v1-v2))
+                fuhao = ' -- '
+                if v1 > v2:
+                    s_msg = s_msg + s + ' : ' + values[i]+'(+'+vv+')' + fuhao + values[i+8] +'\n'
+                elif v1 < v2:
+                    s_msg = s_msg + s + ' : ' + values[i] + fuhao + values[i+8] +'(+'+vv+')'+'\n'
+                else:
+                    s_msg = s_msg + s + ' : ' + values[i] + fuhao + values[i+8] +'\n'
+            return s_msg[0:-1]
+        except:
+            logging.info(traceback.print_exc())
+            return 'inter网速太辣鸡了,你们还是去床上解决吧!!'
+
+    def get_recent_plays(self, uid):
+        try:
+            res = requests.get('https://osu.ppy.sh/api/get_user?k=b68fc239f6b8bdcbb766320bf4579696c270b349&u='+str(uid),timeout=3)
+            if not res:
+                return '你一天没打图了,醒醒!!'
+            result = json.loads(res.text)
+            s_msg = uid+"'s Recent Plays\n"
+            uid = result[0]['user_id']
+            url = 'https://osu.ppy.sh/pages/include/profile-history.php?u=%s&m=0'
+            res = requests.get(url % uid,timeout=5)
+            if not res:
+                return 'ppy炸了,请骚等!!'
+            value = re.compile(r"<time class='timeago'.*?</time> - <a target='_top' href=.*?>(.*?)</a> (.*?)<br/>")
+            values = value.findall(res.text)
+            for i,r in enumerate(values):
+                rplay = ' '.join(r)
+                s_msg = s_msg + str(i+1) + '-' + rplay + '\n'
+            return s_msg[0:-1]
+        except:
+            logging.info(traceback.print_exc())
+            return 'ppy炸了,请骚等!!'
+
+    def get_xinrenqun_replay(self):
+        try:
+            ship = Config.replay_bilibili
+            s_msg = 'osu!新人群月度精彩视频集锦\n'
+            for sp in ship:
+                s_msg = s_msg + sp['title'] + ' : ' + sp['url'] + '\n'
+            return s_msg[0:-1]
+        except:
+            logging.info(traceback.print_exc())
+            return 'inter炸了,请骚等!!'
+
+    def get_help(self):
+        s_msg = "inter登场了!\n"
+        s_msg = s_msg + '1-roll inter摇摇乐!!\n'
+        s_msg = s_msg + '2-setroll 自定义inter的摇摇乐!!\n'
+        s_msg = s_msg + '3-bbp   装逼用的!!\n'
+        s_msg = s_msg + '4-baobp 爆bp专用!!\n'
+        s_msg = s_msg + '5-skill 屙屎熟练度!!\n'
+        s_msg = s_msg + '6-vssk  试一下pk进化的dalou吧!!\n'
+        s_msg = s_msg + '7-recent 最近偷偷刷什么呢!!\n'
+        s_msg = s_msg + '8-check inter智能测小号!!\n'
+        s_msg = s_msg + '9-sp 新(大)人(佬)群集锦!!\n'
+        s_msg = s_msg + '10-ri ???\n'
+        return s_msg[0:-1]
+
+    def get_userpage(self, uid, page):
+        try:
+            if page <= 0:
+                return '你是想找Bug吗??'
+            res = requests.get('https://osu.ppy.sh/api/get_user?k=b68fc239f6b8bdcbb766320bf4579696c270b349&u='+str(uid),timeout=5)
+            if not res:
+                return 'id都错了醒醒!'
+            s_msg = uid+"'s userpage   "
+            result = json.loads(res.text)
+            uid = result[0]['user_id']
+
+            url = 'https://osu.ppy.sh/pages/include/profile-userpage.php?u=%s'
+            res = requests.get(url % uid,timeout=5)
+            if len(res.text) < 1:
+                return 'support都没有,先氪金好吧!'
+            result = (res.text).replace('<br />','\n')
+            repatt = re.compile(r'<.*?>')
+            result = re.sub(repatt,'',result)
+            result = html.parser.unescape(result)
+            pagesize = 250
+            total = (len(result)+pagesize)//pagesize
+            if page > total:
+                page = total
+            s_msg = s_msg + '第%s页,共%s页\n'%(str(page),str(total))
+            return s_msg + result[pagesize*(page-1):pagesize*page]
+        except:
+            logging.info(traceback.print_exc())
+            return 'ppy炸了,请骚等!!'
+
     def check_msg(self,msg,group_uin,user_uin):
 
         # if msg and '!stats' in msg:
@@ -547,6 +653,28 @@ class Login(object):
             self.send(s_msg, group_uin)
             return
 
+        if msg and '!vssk' in msg:
+            ulist = msg[6:].split(',')
+            s_msg = self.skill_vs(ulist[0],ulist[1])
+            self.send(s_msg, group_uin)
+            return
+
+        if msg and '!upage' in msg:
+            s = msg[7:].split(',')
+            if len(s) == 1:
+                page = 1
+            else:
+                page = int(s[1])
+            s_msg = self.get_userpage(s[0],page)
+            self.send(s_msg, group_uin)
+            return
+            
+
+        if msg and '!recent' in msg:
+            s_msg = self.get_recent_plays(msg[8:])
+            self.send(s_msg, group_uin)
+            return
+
         if msg and '!' in msg and 'louxinye' in msg:
             msg_list = ['dalou太强了!!','dalou我偶像!!']
             self.send(random.choice(msg_list),group_uin)
@@ -562,12 +690,59 @@ class Login(object):
             return
 
         if msg and '!help' in msg:
-            self.send('我并不打算help你!!',group_uin)
+            self.send("inter's help need interinter!!",group_uin)
             return
             
         if msg and '!ri' in msg:
             #self.getUser(user_uin)
             self.send('你想被日吗??',group_uin)
+            return
+
+        if msg and '!sp' in msg:
+            s_msg = self.get_xinrenqun_replay()
+            self.send(s_msg,group_uin)
+            return 
+
+        if msg and msg == '!interinter':
+            s_msg = self.get_help()
+            self.send(s_msg,group_uin)
+            return 
+
+        # if msg and msg in '!test':
+        #     s_msg = '┌─┬─┬─┬─┐\n│   │   │   │   │\n├─┼─┼─┼─┤\n│   │   │   │   │\n├─┼─┼─┼─┤\n│   │   │   │   │\n├─┼─┼─┼─┤\n│   │   │   │   │\n└─┴─┴─┴─┘'
+        #     self.send(s_msg,group_uin)
+        #     return
+             
+        if msg and msg == '!test':
+            s_msg = '●●●●●●●●●●●●●●●\n○○○○○○○○○○○○○○○\n●●●●●●●●●●●●●●●\n'
+            self.send(s_msg,group_uin)
+            return
+
+        if msg and '!initwzq2' in msg:
+            s_msg = self.init_wzq2(msg[10:])
+            self.send(s_msg,group_uin)
+            s_msg2 = ''.join(self.wzq_qipan)
+            self.send(s_msg2[0:-1],group_uin)
+            return
+
+        if msg and '!x' in msg:
+            xy = msg[3:].split(',')
+            s_msg = self.wzq_xiaqi2(self.size,int(xy[0]),int(xy[1]))
+            self.send(s_msg[0:-1],group_uin)
+            return
+
+        if msg and '!xtest' in msg:
+            xy = msg[3:].split(',')
+            self.wzq_xiaqi(int(xy[0]),int(xy[1]))
+            s_msg = ''.join(self.wzq_qipan)
+            self.send(s_msg[0:-1],group_uin)
+            return
+
+        if msg and msg == '!inittestwzq':
+            self.init_wzq_qipan()
+            self.send('初始化棋盘成功!',group_uin)
+            s_msg = ''.join(self.wzq_qipan)
+            self.send(s_msg[0:-1],group_uin)
             return
 
         # if msg and '!get' in msg:
@@ -578,6 +753,70 @@ class Login(object):
         #         self.send('不认识你走开,下一个!!',group_uin)
         #     return  
 
+    def wzq_xiaqi2(self, size, x, y):
+        try:
+            black = '●'
+            white = '◎'
+            if 1<=x<=size and 1<=y<=size:
+                i = (size+1)*(x-1)+(y-1)
+                if self.wzq_qipan[i] != '□':
+                    return '五子棋你还想吃了它不成!'
+                if self.wzq_color == 0:
+                    self.wzq_qipan[i] = black
+                    self.wzq_color = 1
+                else:
+                    self.wzq_qipan[i] = white
+                    self.wzq_color = 0
+                return ''.join(self.wzq_qipan)
+                logging.info('下子结束')
+            else:
+                return '醒醒你下偏了,x,y范围在'+str(size)
+        except:
+            logging.info(traceback.print_exc())
+
+    def init_wzq2(self, size):
+        try:
+            size = int(size)
+            if size <=0 or size >50:
+                self.size = 10 
+                s_msg = '参数出错,使用默认size:10*10,初始化棋盘成功!'
+            else:
+                self.size = size 
+                s_msg = '初始化棋盘成功!size:'+str(self.size)+'*'+str(self.size)
+            line = '□'*self.size+'\n'
+            self.wzq_qipan = (list(line))*self.size
+            self.wzq_color = 0 #黑
+            return s_msg
+        except:
+            logging.info(traceback.print_exc())
+            return '初始化棋盘失败!'
+
+    def wzq_xiaqi(self, x, y):
+        try:
+            black = '●'
+            white = '○'
+            i = 28*int(x)+2*int(y)-30
+            if self.wzq_color == 0:
+                self.wzq_qipan[i] = black
+                self.wzq_color = 1
+            else:
+                self.wzq_qipan[i] = white
+                self.wzq_color = 0
+            logging.info('下子结束')
+        except:
+            logging.info(traceback.print_exc())
+
+    def init_wzq_qipan(self):
+        try:
+            top     = '┌─┬─┬─┬─┐\n'
+            top_mid = '│   │   │   │   │\n'
+            mid     = '├─┼─┼─┼─┤\n'
+            bottom  = '└─┴─┴─┴─┘\n'
+            self.wzq_qipan = list(top+top_mid+mid+top_mid+mid+top_mid+mid+top_mid+bottom)
+            self.wzq_color = 0 #黑
+            logging.info('初始化棋盘成功!')
+        except:
+            logging.info(traceback.print_exc())
 
 def qqbot_main():
     l = Login()
