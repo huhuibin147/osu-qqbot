@@ -13,7 +13,7 @@ rbq_614892339 = set([])
 rbq_list_614892339 = {}            
 rbq_514661057 = set([])
 rbq_list_514661057 = {}
-testuser = ['godel','heisiban','cyclc','louxinye','oiso','C8N16O32','ikaNyai']
+testuser = ['C8N16O32','aok']
 
 def onQQMessage(bot, contact, member, content):
     #contact :  ctype/qq/uin/nick/mark/card/name 
@@ -86,6 +86,11 @@ def onQQMessage(bot, contact, member, content):
             name = content.split(' ')[1]
             if name not in testuser:
                 testuser.append(name)
+            bot.SendTo(contact, 'dalouBot奸视列表:'+str(testuser))
+        elif '!rem' in content and member.qq == '405622418':
+            name = content.split(' ')[1]
+            if name in testuser:
+                testuser.remove(name)
             bot.SendTo(contact, 'dalouBot奸视列表:'+str(testuser))
 
     #群限制 Q号 514661057
