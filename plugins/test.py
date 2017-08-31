@@ -13,7 +13,7 @@ rbq_614892339 = set([])
 rbq_list_614892339 = {}            
 rbq_514661057 = set([])
 rbq_list_514661057 = {}
-testuser = ['C8N16O32','aok']
+testuser = ['jrc888','heisiban']
 
 def onQQMessage(bot, contact, member, content):
     #contact :  ctype/qq/uin/nick/mark/card/name 
@@ -77,7 +77,7 @@ def onQQMessage(bot, contact, member, content):
             qq = bot.List(g, name_str)[0].qq
             res = get_osuinfo_byqq(qq)
             if not res:
-                bot.SendTo(contact, 'name 未绑定osuid')
+                bot.SendTo(contact, name+'未绑定osuid')
                 return
             home_url = 'https://osu.ppy.sh/u/%s' % (res[3])
             msg = "%s\nosu:%s\nosuid:%s\n%s" % (name, res[5], res[3], home_url)
@@ -153,7 +153,7 @@ def onQQMessage(bot, contact, member, content):
             qq = bot.List(g, name_str)[0].qq
             res = get_osuinfo_byqq(qq)
             if not res:
-                bot.SendTo(contact, 'name 未绑定osuid')
+                bot.SendTo(contact, name+'未绑定osuid')
                 return
             home_url = 'https://osu.ppy.sh/u/%s' % (res[3])
             msg = "%s\nosu:%s\nosuid:%s\n%s" % (name, res[5], res[3], home_url)
@@ -189,7 +189,7 @@ def onQQMessage(bot, contact, member, content):
 
 #定时任务
 from qqbot import qqbotsched
-@qqbotsched(second='1')
+@qqbotsched(minute='0-59/1')
 def mytask(bot):
     gl = bot.List('group', '614892339')
     if gl is not None:
