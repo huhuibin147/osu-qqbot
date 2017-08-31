@@ -670,10 +670,10 @@ class Login(object):
             return
             
 
-        if msg and '!recent' in msg:
-            s_msg = self.get_recent_plays(msg[8:])
-            self.send(s_msg, group_uin)
-            return
+        # if msg and '!recent' in msg:
+        #     s_msg = self.get_recent_plays(msg[8:])
+        #     self.send(s_msg, group_uin)
+        #     return
 
         if msg and '!' in msg and 'louxinye' in msg:
             msg_list = ['dalou太强了!!','dalou我偶像!!']
