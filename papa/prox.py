@@ -7,7 +7,7 @@ import random
 
 def get_ip_list(url, headers):
     res = requests.get(url, headers=headers)
-    value = re.compile(r'<td class="country">.*?</td><td>(.*?)</td>',re.S)
+    value = re.compile(r'<td class="country">.*?<img.*?<td>(.*?)</td>.*?<td>(.*?)</td>',re.S)
     values = value.findall(res.text)
     print (values)
 

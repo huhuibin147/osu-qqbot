@@ -149,19 +149,21 @@ def insert_bp(info):
         conn.rollback()
         # traceback.print_exc()
 
-def get_uid_bycountry(cou='CN'):
+def get_uid_bycountry(clist):
     try:
         cur = get_cursor()
         sql = '''
-            SELECT user_id from osu_user where country=%s LIMIT 6115,3800
+            SELECT user_id from osu_user where country in (%s)
         '''
-        cur.execute(sql, cou)
+        in_p = ','.join(map(lambda x: '%s', clist))
+        sql = sql % (in_p)
+        cur.execute(sql, clist)
         res = cur.fetchall()
         return res
     except:
         traceback.print_exc()
 
-def main3(cou='CN'):
+def main3(cou):
     '''按rank页爬，10个进程并发'''
     res = get_uid_bycountry(cou)
     pool = multiprocessing.Pool(processes=10)
@@ -173,7 +175,7 @@ def main3(cou='CN'):
 if __name__ == "__main__":
 
     start_time = time.time()
-    main3('CN')
+    main3(['US','HK','PL'])
     # getBp('-inter-')
 
     #x页 y*10条

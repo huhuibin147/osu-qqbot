@@ -5,18 +5,55 @@ import time
 import json
 import pymysql
 import re
+import random
 
 osu_api_key = 'b68fc239f6b8bdcbb766320bf4579696c270b349'
 
-def get_url(url, timeout=1):
+page = random.randint(1, 525)
+url = 'http://www.xicidaili.com/nt/%s' % page
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36'
+}
+res = requests.get(url, headers=headers)
+value = re.compile(r'<td class="country">.*?<img.*?<td>(.*?)</td>.*?<td>(.*?)</td>',re.S)
+values = value.findall(res.text)
+#values = [(ip,port),(127.0.0.1,80)]
+# return values
+
+def get_ip_list():
+    '''返回prox list'''
+    page = random.randint(1, 525)
+    url = 'http://www.xicidaili.com/nt/%s' % page
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36'
+    }
+    res = requests.get(url, headers=headers)
+    value = re.compile(r'<td class="country">.*?<img.*?<td>(.*?)</td>.*?<td>(.*?)</td>',re.S)
+    values = value.findall(res.text)
+    #values = [(ip,port),(127.0.0.1,80)]
+    return values
+
+def get_random_prox():
+    # if not ip_list:
+    #     ip_list = get_ip_list()
+    # ip_tup = random.choice(ip_list)
+    ip_tup = random.choice(values)
+    proxy_ip = "http://%s:%s" % (ip_tup[0],ip_tup[1])
+    proxies = {'http': proxy_ip}
+    # print (proxies)
+    return proxies
+
+def get_url(url, timeout=3):
     '''通用读Url'''
     try:
-        proxies = { "http": "http://163.125.195.58:9797"} 
+        proxies = get_random_prox()
         res = requests.get(url, timeout=timeout, proxies=proxies)
         return res
     except:
         print('超时..')
+        # traceback.print_exc()
         return 0
+
 
 conn = pymysql.connect(host='127.0.0.1',user='root',password='123456',db='osu', charset='utf8')
 
@@ -87,7 +124,7 @@ def main2(start=1,num=1):
     pool.close()
     pool.join()
 
-def getUserList(page=1,country='US'): 
+def getUserList(page=1,country='TW'): 
     '''取rank页资源'''
     try:
         # url = 'https://osu.ppy.sh/p/pp/?m=0&s=3&o=1&f=&page=%s' % page
@@ -172,7 +209,8 @@ if __name__ == "__main__":
 
     start_time = time.time()
     #x页 y*10条
-    main2(198,3)
+    main2(1,200)
+    
 
     #x号id y*300条
     # main(8000000, 10000)
