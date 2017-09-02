@@ -116,15 +116,16 @@ def main(start=0, num=1):
         pool.close()
         pool.join()
         
-def main2(start=1,num=1):
+def main2(country,start=1,num=200):
     '''按rank页爬，10个进程并发'''
-    pool = multiprocessing.Pool(processes=20)
-    for i in range(num):
-        pool.apply_async(getUserList, (start+i, ))
+    pool = multiprocessing.Pool(processes=10)
+    for c in country:
+        for i in range(num):
+            pool.apply_async(getUserList, (start+i,c, ))
     pool.close()
     pool.join()
 
-def getUserList(page=1,country='TW'): 
+def getUserList(page=1,country='RU'): 
     '''取rank页资源'''
     try:
         # url = 'https://osu.ppy.sh/p/pp/?m=0&s=3&o=1&f=&page=%s' % page
@@ -144,72 +145,12 @@ def getUserList(page=1,country='TW'):
     except:
         traceback.print_exc()
 
-def getBp(uid='-interesting-'):
-    '''bp抓取'''
-    try:
-        url = 'https://osu.ppy.sh/api/get_user_best?k=b68fc239f6b8bdcbb766320bf4579696c270b349&u=%s' % uid
-        res = get_url(url,3)
-        while res == 0:
-            res = get_url(url)
-        result = json.loads(res.text)
-        print('uid:'+ str(uid))
-        # print(result)
-        for r in result:
-            insert_bp(r)
-    except:
-        traceback.print_exc()
-
-def insert_bp(info):
-    '''插入'''
-    try:
-        cur = get_cursor()
-        sql = '''
-            insert into osu_bp
-                (beatmap_id, score, maxcombo, countmiss, acc, mods, user_id, date, rank, pp) 
-            values
-                (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        '''
-        c50 = float(info['count50'])
-        c100 = float(info['count100'])
-        c300 = float(info['count300'])
-        cmiss = float(info['countmiss'])
-        acc = round((c50*50+c100*100+c300*300)/(c50+c100+c300+cmiss)/300*100,2)
-        args = [info.get('beatmap_id'), info.get('score'), info.get('maxcombo'), info.get('countmiss'), acc, info.get('enabled_mods'), info.get('user_id'), info.get('date'), info.get('rank'), info.get('pp')]
-        result = cur.execute(sql, args)
-        conn.commit()
-        print('insert:%s,%s' % (info.get('user_id'), info.get('beatmap_id')))
-    except:
-        conn.rollback()
-        # traceback.print_exc()
-
-def get_uid_bycountry(cou='CN'):
-    try:
-        cur = get_cursor()
-        sql = '''
-            SELECT user_id from osu_user where country=%s LIMIT 6115,3800
-        '''
-        cur.execute(sql, cou)
-        res = cur.fetchall()
-        return res
-    except:
-        traceback.print_exc()
-
-def main3(cou='CN'):
-    '''按rank页爬，10个进程并发'''
-    res = get_uid_bycountry(cou)
-    pool = multiprocessing.Pool(processes=10)
-    for r in res:
-        pool.apply_async(getBp, (r[0], ))
-    pool.close()
-    pool.join()
-
-
 
 if __name__ == "__main__":
 
     start_time = time.time()
     #x页 y*10条
-    main2(1,200)
+    main2(['CA','KR','FR','GB','AU','FL','MK'])
     
 
     #x号id y*300条
