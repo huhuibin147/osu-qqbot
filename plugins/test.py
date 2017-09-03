@@ -9,8 +9,10 @@ import redis
 import html.parser
 import re
 import datetime
-import mods
+import math
 
+
+import mods
 import Config
 
 rbq_614892339 = set([])
@@ -128,24 +130,35 @@ def onQQMessage(bot, contact, member, content):
                     bot.SendTo(contact, member.name+'未绑定osuid')
                     return
                 uid = res[5]
-            value = dalou_test(uid)
-            if value < 1:
-                level = '极致不健康'
-            elif 5 > value >= 1:
-                level = '灰常不健康'
-            elif 10 > value >= 5:
-                level = '不健康'
-            elif 15 > value >= 10:
-                level = '介于健康与不健康'
-            elif 25 > value >= 15:
-                level = '健康'
-            elif 100 > value >= 30:
-                level = '健康过度'
-            elif value >= 100:
-                level = '健康溢出'
-            msg = '%s\n健康指数:%s\nleve:%s' % (uid,value,level)
-            # msg = html.parser.unescape(msg)
+            msg = health_check(uid)
             bot.SendTo(contact, msg)
+        # elif '!test' in content:
+        #     uid = content[6:]
+        #     #取qq绑定
+        #     if not uid:
+        #         res = get_osuinfo_byqq(member.qq)
+        #         if not res:
+        #             bot.SendTo(contact, member.name+'未绑定osuid')
+        #             return
+        #         uid = res[5]
+        #     value = dalou_test(uid)
+        #     if value < 1:
+        #         level = '极致不健康'
+        #     elif 5 > value >= 1:
+        #         level = '灰常不健康'
+        #     elif 10 > value >= 5:
+        #         level = '不健康'
+        #     elif 15 > value >= 10:
+        #         level = '介于健康与不健康'
+        #     elif 25 > value >= 15:
+        #         level = '健康'
+        #     elif 100 > value >= 30:
+        #         level = '健康过度'
+        #     elif value >= 100:
+        #         level = '健康溢出'
+        #     msg = '%s\n健康指数:%s\nleve:%s' % (uid,value,level)
+        #     # msg = html.parser.unescape(msg)
+        #     bot.SendTo(contact, msg)
         elif '!bbp' in content:
             uid = content[5:]
             #取qq绑定
@@ -196,7 +209,6 @@ def onQQMessage(bot, contact, member, content):
                 page = int(slist[1])
             msg = get_userpage(slist[0], page)
             bot.SendTo(contact, msg)
-            
             
     
 
@@ -615,6 +627,60 @@ def get_userpage(uid, page):
         traceback.print_exc()
         return 'ppy炸了,请骚等!!'
 
+def health_check(uid):
+    '''健康指数2'''
+    user,bp = get_user_and_bp(uid)
+    pp = float(user['pp_raw'])
+    pc = int(user['playcount'])
+    tth = int(user['count300'])+int(user['count100'])+int(user['count50'])
+    bp1 = float(bp[0]['pp'])
+    bp5 = float(bp[4]['pp'])
+    acc_list = []
+    for b in bp:
+        c50 = float(b['count50'])
+        c100 = float(b['count100'])
+        c300 = float(b['count300'])
+        cmiss = float(b['countmiss'])
+        acc = round((c50*50+c100*100+c300*300)/(c50+c100+c300+cmiss)/300,2)
+        acc_list.append(acc)
+    acc_list = sorted(acc_list,reverse=True)
+    acc1 = acc_list[0]
+    acc2 = acc_list[1]
+    acc3 = acc_list[2]
+    print(pp,pc,tth,bp1,bp5,acc1,acc2,acc3)
+    v = pp*pc*tth*bp1*bp5*acc1*acc2*acc3
+    if v == 0:
+        return "%s 数据不正常" % uid
+    else:
+        A1 = pp/(4*bp1-3*bp5)
+        A2 = math.log(tth/pc)/math.log(15.5)
+        if pp < 1000:
+            A31 = 1000*pc/(1.2*pp)-400
+        elif pp < 7000:
+            A31 = 1000*pc/(0.0008*pp*pp+0.4*pp)-400
+        else:
+            A31 = 1000*pc/(6*pp)-400
+        if A31 > 1:
+            A3 = math.log(A31)/math.log(25.5)
+        else:
+            A3 = 0
+        A4 = math.pow((acc1+acc2+acc3)/3,5)
+        total = A1*A2*A3*A4
+         
+        if total < 14:
+            level = '可以踢了'
+        elif total < 28:
+            level = '严重可疑'
+        elif total < 35:
+            level = '较危险'
+        elif total < 42:
+            level = '亚健康'
+        elif total < 56:
+            level = '很健康'
+        else:
+            level = '无敌'
+        msg = '%s\nBP指标:%.2f 参考值12.00\nTTH指标:%.2f 参考值2.00\nPC指标:%.2f 参考值2.00\nACC指标:%.4f 参考值0.9000\n综合指标:%.2f\n结论:%s' %(uid,A1,A2,A3,round(A4,2),round(total,4),level)
+        return msg
 
 def get_help():
     '''帮助'''
