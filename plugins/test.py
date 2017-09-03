@@ -679,7 +679,7 @@ def health_check(uid):
             level = '很健康'
         else:
             level = '无敌'
-        msg = '%s\nBP指标:%.2f 参考值12.00\nTTH指标:%.2f 参考值2.00\nPC指标:%.2f 参考值2.00\nACC指标:%.4f 参考值0.9000\n综合指标:%.2f\n结论:%s' %(uid,A1,A2,A3,round(A4,2),round(total,4),level)
+        msg = '%s\nBP指标:%.2f 参考值12.00\nTTH指标:%.2f 参考值2.00\nPC指标:%.2f 参考值2.00\nACC指标:%.4f 参考值0.9000\n综合指标:%.2f\n结论:%s' %(uid,A1,A2,A3,round(A4,4),round(total,2),level)
         return msg
 
 def get_help():
