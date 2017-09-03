@@ -636,7 +636,7 @@ def health_check(uid):
     bp1 = float(bp[0]['pp'])
     bp5 = float(bp[4]['pp'])
     acc_list = []
-    for b in bp:
+    for b in bp[0:5]:
         c50 = float(b['count50'])
         c100 = float(b['count100'])
         c300 = float(b['count300'])
