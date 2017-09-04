@@ -436,7 +436,7 @@ def check_user(uid):
             # print(args)
             cur = get_cursor()
             sql='''
-                SELECT avg(u.pp_raw),count(1) from osu_bp b INNER JOIN osu_user u on b.user_id=u.user_id where b.beatmap_id = %s and b.mods=%s and b.maxcombo BETWEEN %s and %s and b.acc BETWEEN %s and %s
+                SELECT avg(u.pp_raw),count(1) from osu_bp b INNER JOIN osu_user u on b.user_id=u.user_id where b.beatmap_id = %s and b.mods=%s and b.acc BETWEEN %s and %s and b.maxcombo BETWEEN %s and %s 
             '''
             cur.execute(sql, args)
             res = cur.fetchall()

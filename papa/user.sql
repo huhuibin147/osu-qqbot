@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50711
 File Encoding         : 65001
 
-Date: 2017-09-04 10:32:32
+Date: 2017-09-04 23:55:17
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -31,7 +31,7 @@ CREATE TABLE `user` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_qq` (`qq`,`groupid`),
   KEY `idx_name` (`osuname`)
-) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=106 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Records of user
@@ -95,3 +95,29 @@ INSERT INTO `user` VALUES ('69', '【毕业】貓兔/Soraka', '2056380983', '681
 INSERT INTO `user` VALUES ('70', 'Endorfin.', '2655927663', '9386243', '514661057', '300yx', '0', '5');
 INSERT INTO `user` VALUES ('71', 'umi9sonoda', '921689419', '8426327', '514661057', 'umi9sonoda', '0', '5');
 INSERT INTO `user` VALUES ('72', 'ye__ow', '568532708', '2992539', '514661057', 'ye__ow', '0', '5');
+INSERT INTO `user` VALUES ('73', 'AMelax', '1136084891', '8768183', '514661057', 'AMelax', '0', '5');
+INSERT INTO `user` VALUES ('74', 'あもり', '670527749', '3132772', '598918097', 'amori', '0', '5');
+INSERT INTO `user` VALUES ('75', 'AngeLIllya，求mu', '675737637', '10553264', '598918097', 'IllyaLoli', '0', '5');
+INSERT INTO `user` VALUES ('76', 'Totoriott', '943837838', '5967131', '598918097', 'totoriott', '0', '5');
+INSERT INTO `user` VALUES ('77', '柳墨云河', '1693020481', '9445093', '598918097', 'yuanxi123', '0', '5');
+INSERT INTO `user` VALUES ('78', 'hgxcxdg', '280485660', '5935141', '598918097', 'hgxcxdg', '0', '5');
+INSERT INTO `user` VALUES ('79', 'abc', '805404829', '3635214', '598918097', 'vrainbow', '0', '5');
+INSERT INTO `user` VALUES ('80', '【1800pp虚高1000pp】NucleophileAP', '604490178', '9237208', '614892339', 'NucleophileAP', '0', '5');
+INSERT INTO `user` VALUES ('81', 'dullwolf', '1091569752', '10516632', '614892339', 'steal_sister', '0', '5');
+INSERT INTO `user` VALUES ('82', 'lausdeo', '877618011', '6096283', '614892339', 'lausdeo', '0', '5');
+INSERT INTO `user` VALUES ('84', '7Ark', '1265775896', '8978950', '614892339', '7Ark', '0', '5');
+INSERT INTO `user` VALUES ('90', 'pwpouoqwq', '2073296145', '9799883', '614892339', 'pwpouoqwq', '0', '5');
+INSERT INTO `user` VALUES ('91', 'a一年', '480988405', '8995648', '614892339', 'txy114114', '0', '5');
+INSERT INTO `user` VALUES ('92', 'Isokaze', '981113321', '8567372', '614892339', 'Souji', '0', '5');
+INSERT INTO `user` VALUES ('94', 'Alan', '1849304789', '10398767', '614892339', 'Alan_Chark', '0', '5');
+INSERT INTO `user` VALUES ('95', 'Se Tsu Na', '1559449817', '6073139', '614892339', 'Se_Tsu_Na', '0', '5');
+INSERT INTO `user` VALUES ('96', 'Great meat', '624467921', '3259615', '614892339', 'Great_meat', '0', '5');
+INSERT INTO `user` VALUES ('97', 'dxrzxb期待mu', '2863286514', '6956592', '598918097', 'dxrzxb', '0', '5');
+INSERT INTO `user` VALUES ('98', 'Thonking', '1730459893', '9781926', '598918097', 'Thonking', '0', '5');
+INSERT INTO `user` VALUES ('99', '-Ninko', '2529839497', '7534323', '598918097', '-Ninko', '0', '5');
+INSERT INTO `user` VALUES ('100', 'bug酱', '812035954', '3749808', '598918097', 'czhhws', '0', '5');
+INSERT INTO `user` VALUES ('101', '君莫言', '2510797443', '8368247', '598918097', 'junmoyan', '0', '5');
+INSERT INTO `user` VALUES ('102', '请叫我小p', '1131576371', '7375340', '598918097', 'Stein', '0', '5');
+INSERT INTO `user` VALUES ('103', 'Candyland123 RXSO玩家', '1442104687', '9343961', '614892339', 'Candyland123', '0', '5');
+INSERT INTO `user` VALUES ('104', '各位天台见', '1753364172', '1053938', '598918097', 'NAIVE', '0', '5');
+INSERT INTO `user` VALUES ('105', 'カリーฅฅ', '374627945', '8012734', '598918097', 'curriescaz', '0', '5');
