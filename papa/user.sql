@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50711
 File Encoding         : 65001
 
-Date: 2017-09-04 00:40:02
+Date: 2017-09-04 10:32:32
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -31,7 +31,7 @@ CREATE TABLE `user` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_qq` (`qq`,`groupid`),
   KEY `idx_name` (`osuname`)
-) ENGINE=InnoDB AUTO_INCREMENT=67 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Records of user
@@ -89,3 +89,9 @@ INSERT INTO `user` VALUES ('63', 'kss233', '1169181371', '9296663', '614892339',
 INSERT INTO `user` VALUES ('64', '【毕业】505369962', '505369962', '9903602', '614892339', '505369962', '0', '5');
 INSERT INTO `user` VALUES ('65', '小葉Aok', '1719583076', '8826089', '614892339', 'Aok', '0', '5');
 INSERT INTO `user` VALUES ('66', '[ctb]Last Place', '757772012', '253015', '614892339', 'Last_Place', '0', '5');
+INSERT INTO `user` VALUES ('67', '蓝', '623055567', '8530700', '598918097', 'KyuubiRan', '0', '5');
+INSERT INTO `user` VALUES ('68', '【quit w】taolex', '1239219529', '4489519', '614892339', 'taolex', '0', '5');
+INSERT INTO `user` VALUES ('69', '【毕业】貓兔/Soraka', '2056380983', '6812680', '614892339', 'Soraka', '0', '5');
+INSERT INTO `user` VALUES ('70', 'Endorfin.', '2655927663', '9386243', '514661057', '300yx', '0', '5');
+INSERT INTO `user` VALUES ('71', 'umi9sonoda', '921689419', '8426327', '514661057', 'umi9sonoda', '0', '5');
+INSERT INTO `user` VALUES ('72', 'ye__ow', '568532708', '2992539', '514661057', 'ye__ow', '0', '5');

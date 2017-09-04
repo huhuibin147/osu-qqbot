@@ -661,7 +661,7 @@ def health_check(uid):
         else:
             A31 = 1000*pc/(6*pp)-400
         if A31 > 1:
-            A3 = math.log(A31)/math.log(25.5)
+            A3 = math.log(A31)/math.log(24.5)
         else:
             A3 = 0
         A4 = math.pow((acc1+acc2+acc3)/3,5)
