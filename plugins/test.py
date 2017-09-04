@@ -21,6 +21,8 @@ rbq_514661057 = set([])
 rbq_list_514661057 = {}
 testuser = []
 
+aite = ['不想理你!','你是想被dalou打爆?','你想被日吗?','你想调戏我?','再艾特我,叫dalou打你!']
+
 def onQQMessage(bot, contact, member, content):
     #contact :  ctype/qq/uin/nick/mark/card/name 
     #群限制 Q号 614892339
@@ -30,7 +32,10 @@ def onQQMessage(bot, contact, member, content):
         if len(rbq_614892339) > 20:
             rbq_614892339.pop()
         rbq_614892339.add(member.name)
-        
+
+        if '@ME' in content:
+            msg = random.choice(aite)
+            bot.SendTo(contact, msg)
         if content == '!help':
             bot.SendTo(contact, 'dalou只会打爆你!')
         elif content == '!dalou':
