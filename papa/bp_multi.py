@@ -210,7 +210,7 @@ def main3(cou):
 if __name__ == "__main__":
 
     start_time = time.time()
-    main3(['PL','CA','KR','FR','GB','AU','FL','MK'])
+    main3(['KR','FR','GB','AU','FL','MK'])
     # getBp('-inter-')
 
     #x页 y*10条
