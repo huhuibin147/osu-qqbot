@@ -112,7 +112,7 @@ def onQQMessage(bot, contact, member, content):
             if not uid:
                 res = get_osuinfo_byqq(member.qq)
                 if not res:
-                    bot.SendTo(contact, member.name+'未绑定osuid')
+                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
                     return
                 uid = res[5]
             pp,pp2,maxpp = check_user(uid)
@@ -127,7 +127,7 @@ def onQQMessage(bot, contact, member, content):
             if not uid:
                 res = get_osuinfo_byqq(member.qq)
                 if not res:
-                    bot.SendTo(contact, member.name+'未绑定osuid')
+                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
                     return
                 uid = res[5]
             msg = health_check(uid)
@@ -165,7 +165,7 @@ def onQQMessage(bot, contact, member, content):
             if not uid:
                 res = get_osuinfo_byqq(member.qq)
                 if not res:
-                    bot.SendTo(contact, member.name+'未绑定osuid')
+                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
                     return
                 uid = res[5]
             msg = get_bp_info(uid)
@@ -179,7 +179,7 @@ def onQQMessage(bot, contact, member, content):
             if not uid:
                 res = get_osuinfo_byqq(member.qq)
                 if not res:
-                    bot.SendTo(contact, member.name+'未绑定osuid')
+                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
                     return
                 uid = res[5]
             msg = get_skill(uid)
@@ -190,7 +190,7 @@ def onQQMessage(bot, contact, member, content):
                 #取qq绑定
                 res = get_osuinfo_byqq(member.qq)
                 if not res:
-                    bot.SendTo(contact, member.name+'未绑定osuid')
+                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
                     return
                 u1 = res[5]
                 u2 = content[6:]
