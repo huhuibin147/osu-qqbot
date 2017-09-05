@@ -10,7 +10,7 @@ import html.parser
 import re
 import datetime
 import math
-
+import multiprocessing
 
 import mods
 import Config
@@ -20,19 +20,26 @@ rbq_list_614892339 = {}
 rbq_514661057 = set([])
 rbq_list_514661057 = {}
 testuser = []
+# if contact.qq != '614892339' and contact.qq != '514661057' and contact.qq != '598918097':
+#     return 
+# if len(rbq_614892339) > 20:
+#     rbq_614892339.pop()
+# rbq_614892339.add(member.name)
+aite = [
+    '不想理你!','你是想被dalou打爆?','你想被日吗?','你想调戏我?',
+    '再艾特我,叫dalou打你!','求求你，不要再艾特我了!','我要找幕后黑手烟你!',
+    'dalou还有幕后黑手!','有事请找幕后黑手inter!','我要日你!'
+    ]
 
-aite = ['不想理你!','你是想被dalou打爆?','你想被日吗?','你想调戏我?','再艾特我,叫dalou打你!']
 
 def onQQMessage(bot, contact, member, content):
     #contact :  ctype/qq/uin/nick/mark/card/name 
     #群限制 Q号 614892339
     if contact.ctype == 'group':
-        if contact.qq != '614892339' and contact.qq != '514661057' and contact.qq != '598918097':
-            return 
-        if len(rbq_614892339) > 20:
-            rbq_614892339.pop()
-        rbq_614892339.add(member.name)
-
+        if contact.qq != '614892339' and contact.qq != '514661057':
+            if '!' in content:
+                bot.SendTo(contact, '幕后黑手升级中...(版本修整)')
+            return
         if '@ME' in content:
             msg = random.choice(aite)
             bot.SendTo(contact, msg)
