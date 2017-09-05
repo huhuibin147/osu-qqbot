@@ -25,6 +25,7 @@ testuser = []
 # if len(rbq_614892339) > 20:
 #     rbq_614892339.pop()
 # rbq_614892339.add(member.name)
+others_github = 'https://github.com/pandolia/qqbot'
 aite = [
     '不想理你!','你是想被dalou打爆?','你想被日吗?','你想调戏我?',
     '再艾特我,叫dalou打你!','求求你，不要再艾特我了!','我要找幕后黑手烟你!',
@@ -38,7 +39,7 @@ def onQQMessage(bot, contact, member, content):
     if contact.ctype == 'group':
         if contact.qq != '614892339' and contact.qq != '514661057':
             if '!' in content:
-                bot.SendTo(contact, '幕后黑手升级中...(版本修整)')
+                bot.SendTo(contact, '幕后黑手被dalou打爆,只留下一个地址:%s' % others_github)
             return
         if '@ME' in content:
             msg = random.choice(aite)
