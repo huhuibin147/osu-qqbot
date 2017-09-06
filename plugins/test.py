@@ -44,6 +44,10 @@ def onQQMessage(bot, contact, member, content):
         if '@ME' in content:
             msg = random.choice(aite)
             bot.SendTo(contact, msg)
+        if 'dalou' in content:
+            num = random.randint(0,100)
+            if num > 90:
+                bot.SendTo(contact, '成功召唤10费dalou!')
         if content == '!help':
             bot.SendTo(contact, 'dalou只会打爆你!')
         elif content == '!dalou':
