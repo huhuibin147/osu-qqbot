@@ -249,6 +249,22 @@ def onQQMessage(bot, contact, member, content):
         elif '!set' in content:
             testuser.append(content.split(' ')[1])
             bot.SendTo(contact, '用户切换:'+testuser)
+        elif '!check' in content:
+            bot.SendTo(contact, 'dalou手动计算中...请骚等!')
+            uid = content[7:]
+            #取qq绑定
+            if not uid:
+                res = get_osuinfo_byqq(member.qq)
+                if not res:
+                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+                    return
+                uid = res[5]
+            pp,pp2,maxpp = check_user(uid)
+            if not pp:
+                bot.SendTo(contact, '没有pp,下一个!')
+                return
+            msg = '%s\npp:%spp\ndalou手算:%spp\n目前潜力:%spp' % (uid,pp,pp2,maxpp)
+            bot.SendTo(contact, msg)
 
 
 #定时任务
@@ -257,7 +273,7 @@ from qqbot import qqbotsched
 def mytask(bot):
     if not testuser:
         return
-    gl = bot.List('group', '614892339')
+    gl = bot.List('group', '514661057')#614892339
     if gl is not None:
         for group in gl:
             for t in testuser:
@@ -424,13 +440,13 @@ def get_bp_and_pp(uid):
 def check_user(uid):
     '''pp估计计算'''
     try:
-        pp,res = get_bp_and_pp(uid)
+        pp,result = get_bp_and_pp(uid)
         if not pp:
             return 0,0,0
         count_num = 0
         count_pp = 0
         maxpp = 0
-        for r in res:
+        for r in result:
             maxcombo1 = int(r['maxcombo']) - 10
             maxcombo2 = int(r['maxcombo']) + 10
             c50 = float(r['count50'])
@@ -440,7 +456,7 @@ def check_user(uid):
             acc = round((c50*50+c100*100+c300*300)/(c50+c100+c300+cmiss)/300*100,2)
             acc1 = acc - 0.2
             acc2 = acc + 0.2
-            args = [r['beatmap_id'], r['enabled_mods'], maxcombo1, maxcombo2, acc1, acc2]
+            args = [r['beatmap_id'], r['enabled_mods'], acc1, acc2, maxcombo1, maxcombo2]
             # print(args)
             cur = get_cursor()
             sql='''
