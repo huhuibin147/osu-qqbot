@@ -244,8 +244,6 @@ def onQQMessage(bot, contact, member, content):
                 return
             msg = "%s\nosu:%s\nosuid:%s" % (contact.name, info[5], info[3])
             bot.SendTo(contact, msg)
-        elif '!test' == content:
-            get_recent_plays('heisiban')
         elif '!set' in content:
             testuser.append(content.split(' ')[1])
             bot.SendTo(contact, '用户切换:'+testuser)
@@ -281,15 +279,16 @@ def mytask(bot):
                 if msg:
                     bot.SendTo(group, msg)
 
-r = redis.Redis(host='127.0.0.1', port=6379)
+redis_client = redis.Redis(host='127.0.0.1', port=6379)
 def get_recent_plays(osuname):
     try:
         osuid = get_osuid(osuname)
         url = 'https://osu.ppy.sh/pages/include/profile-history.php?u=%s&m=0' % osuid
         res = get_url(url)
-        while not res:
+        while res == 0:
             res = get_url(url)
-
+        if not res:
+            return 0
         value = re.compile(r"<time class='timeago' datetime.*?>(.*?)</time> - <a target='_top' href=.*?>(.*?)</a> (.*?)<br/>")
         values = value.search(res.text)
         print(values.group())
@@ -297,11 +296,11 @@ def get_recent_plays(osuname):
             return 0
         #redis处理判断是否更新
         key = 'osu_recent:%s' % osuid
-        recent = r.get(key)
+        recent = redis_client.get(key)
         if recent and bytes.decode(recent) == values.group(1):
             return 0
         else:
-            r.set(key, values.group(1), 3600 * 24)
+            redis_client.set(key, values.group(1), 3600 * 24)
             #UTC时间转换
             utc_time = datetime.datetime.strptime(values.group(1)[0:-4],'%Y-%m-%d %H:%M:%S')
             now_time = utc_time + datetime.timedelta(hours=8)
@@ -311,11 +310,22 @@ def get_recent_plays(osuname):
         traceback.print_exc()
         return 0
 
-def get_url(url, timeout=1):
+def get_url(url, timeout=3, stoptimes=3 ):
+    key = 'times:%s' % url
     try:
+        times = redis_client.get(key)
+        if not times:
+            redis_client.incr(key)
+            redis_client.expire(key, 60)
+        elif int(times) < stoptimes:
+            redis_client.incr(key)
+        else:
+            return []
+
         res = requests.get(url, timeout=timeout)
         return res
     except:
+        traceback.print_exc()
         print('超时..')
         return 0
 
@@ -350,13 +360,8 @@ def get_osuid(osuname):
     try:
         url = 'https://osu.ppy.sh/api/get_user?k=%s&u=%s' % (osu_api_key, osuname)
         res = get_url(url)
-        c = 0
         while res == 0:
-            if c > 5:
-                return 0
-            else:
-                res = get_url(url)
-                c += 1
+            res = get_url(url)
         if not res:
             return 0
         result = json.loads(res.text)
@@ -405,14 +410,9 @@ def get_bp_and_pp(uid):
     try:
         url = 'https://osu.ppy.sh/api/get_user?k=%s&u=%s' % (osu_api_key, uid)
         res = get_url(url)
-        c = 0
         while res == 0:
-            if c > 5:
-                return 0,0
-            else:
-                c += 1
-                res = get_url(url)
-        if res == 0:
+            res = get_url(url)
+        if not res:
             return 0,0
         result = json.loads(res.text)
         if not result:
@@ -421,14 +421,9 @@ def get_bp_and_pp(uid):
 
         url2 = 'https://osu.ppy.sh/api/get_user_best?k=%s&u=%s' % (osu_api_key, uid)
         res = get_url(url2)
-        c = 0
         while res == 0:
-            if c > 5:
-                return 0,0
-            else:
-                c += 1
-                res = get_url(url2)
-        if res == 0:
+            res = get_url(url2)
+        if not res:
             return 0,0
         result = json.loads(res.text)
         return pp,result
@@ -489,14 +484,9 @@ def get_user_and_bp(uid):
     try:
         url = 'https://osu.ppy.sh/api/get_user?k=%s&u=%s' % (osu_api_key, uid)
         res = get_url(url)
-        c = 0
         while res == 0:
-            if c > 5:
-                return 0,0
-            else:
-                c += 1
-                res = get_url(url)
-        if res == 0:
+            res = get_url(url)
+        if not res:
             return 0,0
         result = json.loads(res.text)
         if not result:
@@ -505,14 +495,9 @@ def get_user_and_bp(uid):
 
         url2 = 'https://osu.ppy.sh/api/get_user_best?k=%s&u=%s' % (osu_api_key, uid)
         res = get_url(url2)
-        c = 0
         while res == 0:
-            if c > 5:
-                return 0,0
-            else:
-                c += 1
-                res = get_url(url2)
-        if res == 0:
+            res = get_url(url2)
+        if not res:
             return 0,0
         result = json.loads(res.text)
         return user,result
