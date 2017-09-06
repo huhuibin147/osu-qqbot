@@ -31,13 +31,13 @@ aite = [
     '再艾特我,叫dalou打你!','求求你，不要再艾特我了!','我要找幕后黑手烟你!',
     'dalou还有幕后黑手!','有事请找幕后黑手inter!','我要日你!'
     ]
-
+group_list = ['614892339','514661057','641236878']
 
 def onQQMessage(bot, contact, member, content):
     #contact :  ctype/qq/uin/nick/mark/card/name 
     #群限制 Q号 614892339
     if contact.ctype == 'group':
-        if contact.qq != '614892339' and contact.qq != '514661057':
+        if contact.qq not in group_list:
             if '!' in content:
                 bot.SendTo(contact, '幕后黑手被dalou打爆,只留下一个地址:%s' % others_github)
             return
@@ -46,7 +46,7 @@ def onQQMessage(bot, contact, member, content):
             bot.SendTo(contact, msg)
         if 'dalou' in content:
             num = random.randint(0,100)
-            if num > 90:
+            if num > 98:
                 bot.SendTo(contact, '成功召唤10费dalou!')
         if content == '!help':
             bot.SendTo(contact, 'dalou只会打爆你!')
@@ -225,6 +225,17 @@ def onQQMessage(bot, contact, member, content):
             else:
                 page = int(slist[1])
             msg = get_userpage(slist[0], page)
+            bot.SendTo(contact, msg)
+        elif '!card' in content:
+            uid = content[6:]
+            #取qq绑定
+            if not uid:
+                res = get_osuinfo_byqq(member.qq)
+                if not res:
+                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+                    return
+                uid = res[5]
+            msg = get_card_msg(uid)
             bot.SendTo(contact, msg)
             
     
@@ -776,6 +787,73 @@ def health_check(uid):
         
         msg = '%s\nBP指标:%.2f 参考值12.00\nTTH指标:%.2f 参考值2.00\nPC指标:%.2f 参考值2.00\nACC指标:%.4f 参考值0.9000\n综合指标:%.2f\n结论:%s' %(uid,A1,A2,A3,round(A4,4),round(total,2),level)
         return msg
+
+def get_card(username):
+    try:
+        cur = get_cursor()
+        sql = '''
+            SELECT username,pp_raw,acc,pc FROM osu_user where username = %s
+        '''
+        cur.execute(sql, username)
+        res = cur.fetchall()
+        if not res:
+            return 0
+        user = res[0]
+        #('louxinye', 4329.1699, 98.79, '17268')
+        if  0 <= user[1] <= 2000:
+            level = 1
+        elif 2000 < user[1] <= 3000:
+            level = 2
+        elif 3000 < user[1] <= 4000:
+            level = 3
+        elif 4000 < user[1] <= 6000:
+            level = 4
+        elif 6000 < user[1] <= 8000:
+            level = 5
+        elif 8000 < user[1]:
+            level = 6
+        card_level = level * '*'
+
+        if 90 < user[2] <= 97:
+            attack = (user[2]-90)*0.5
+        elif 97 < user[2]:
+            attack = (user[2]-97)*5
+        else:
+            attack = 0
+        card_attack = 5 + level*5 + attack
+
+        pc = int(user[3])
+        if  0 <= pc <= 5000:
+            defense = pc * 0.002
+        elif 5000 < pc <= 10000:
+            defense = pc * 0.002
+        elif 10000 < pc <= 20000:
+            defense = pc * 0.001
+        elif 20000 < pc <= 30000:
+            defense = pc * 0.001
+        elif 30000 < pc <= 70000:
+            defense = pc * 0.00025
+        elif 7000 < pc:
+            defense = pc * 0.000125
+        card_defense = 5 + level*5 + defense
+
+        max_attack = 5 + level*5 + 18.5
+        max_defense = 5 + level*5 + 10
+
+        card_hp = 200 + (max_attack - card_attack + max_defense - card_defense) * 8
+        
+        return(username,card_level,round(card_attack),round(card_defense),round(card_hp))
+    except:
+        traceback.print_exc()
+        return 0
+
+def get_card_msg(username):
+    card_tup = get_card(username)
+    if not card_tup:
+        msg = '%s不在卡池中!' % username
+        return msg
+    msg = '%s\n星级:%s\n攻击:%s\n防御:%s\n生命:%s' % (card_tup[0],card_tup[1],card_tup[2],card_tup[3],card_tup[4])
+    return msg
 
 def get_help():
     '''帮助'''
