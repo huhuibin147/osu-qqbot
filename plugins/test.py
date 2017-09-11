@@ -237,7 +237,18 @@ def onQQMessage(bot, contact, member, content):
                 uid = res[5]
             msg = get_card_msg(uid)
             bot.SendTo(contact, msg)
-            
+        elif '!map' == content:
+            uid = content[5:]
+            #取qq绑定
+            if not uid:
+                res = get_osuinfo_byqq(member.qq)
+                if not res:
+                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+                    return
+                uid = res[5]
+            bot.SendTo(contact, 'inter去ppy找图了,请骚等...')
+            msg = tuijian(uid)
+            bot.SendTo(contact, msg)
     
 
     #测试
@@ -403,6 +414,23 @@ def get_myinfo(qq):
         traceback.print_exc()
         return 0
 
+def tuijian(uid):
+    '''低端推荐pp图'''
+    try:
+        pp = float(get_user_pp(uid))
+        cur = get_cursor()
+        sql = '''
+            SELECT beatmap_id,count(beatmap_id) num FROM osu_user ta INNER JOIN osu_bp tb on ta.user_id = tb.user_id where ta.pp_raw BETWEEN %s and %s GROUP BY beatmap_id ORDER BY num desc limit 1; 
+        '''
+        cur.execute(sql, [pp-10,pp+10])
+        res = cur.fetchall()
+        if not res:
+            return 0
+        msg = 'inter推荐给%s的图:https://osu.ppy.sh/b/%s  推荐指数:%s' %(uid,res[0][0],res[0][1])
+        return  msg
+    except:
+        traceback.print_exc()
+        return 0
 
 def get_osuinfo_byqq(qq):
     '''查库qq对应osuid'''
@@ -416,6 +444,23 @@ def get_osuinfo_byqq(qq):
         if not res:
             return 0
         return  res[0]
+    except:
+        traceback.print_exc()
+        return 0
+
+def get_user_pp(uid):
+    try:
+        url = 'https://osu.ppy.sh/api/get_user?k=%s&u=%s' % (osu_api_key, uid)
+        res = get_url(url)
+        while res == 0:
+            res = get_url(url)
+        if not res:
+            return 0,0
+        result = json.loads(res.text)
+        if not result:
+            return 0,0
+        pp = result[0]['pp_raw']
+        return pp
     except:
         traceback.print_exc()
         return 0
@@ -855,6 +900,8 @@ def get_card_msg(username):
     msg = '%s\n星级:%s\n攻击:%s\n防御:%s\n生命:%s' % (card_tup[0],card_tup[1],card_tup[2],card_tup[3],card_tup[4])
     return msg
 
+
+
 def get_help():
     '''帮助'''
     msg = '''interBot v1.2
@@ -863,14 +910,15 @@ def get_help():
 3.setid xxx(请绑定,后续有用)
 4.myinfo
 5.getid@别人(获取群员osuid)
-6.inter的奸视(new)(需要权限)
-7.check xxx(new)(使用大数据支持)
-8.js 奸视列表(new)
-9.test 健康指数(new)(dalou公式)
-10.bbp(移植)
-11.sp(移植)
-12.skill(移植)
-13.vssk(移植)
-14.upage xx,2(移植)
-15.接受功能建议'''
+6.inter的奸视(需要权限)
+7.check xxx(使用大数据支持)
+8.js 奸视列表
+9.test 健康指数(new(dalou公式)
+10.bbp
+11.sp
+12.skill
+13.vssk
+14.upage xx,2
+15.map(new)推荐pp图
+16.接受功能建议'''
     return msg
