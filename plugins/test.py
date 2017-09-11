@@ -48,9 +48,9 @@ def onQQMessage(bot, contact, member, content):
             num = random.randint(0,100)
             if num > 98:
                 bot.SendTo(contact, '成功召唤10费dalou!')
-        if content == '!help':
-            bot.SendTo(contact, 'dalou只会打爆你!')
-        elif content == '!dalou':
+        # if content == '!help':
+        #     bot.SendTo(contact, 'dalou只会打爆你!')
+        elif content == '!inter':
             msg = get_help()
             bot.SendTo(contact, msg)
         # elif content == '!rbq':
@@ -80,10 +80,10 @@ def onQQMessage(bot, contact, member, content):
             osuname = content.split(' ')[1]
             osuid = get_osuid(osuname)
             if not osuid:
-                bot.SendTo(contact, '绑定失败,dalouBot不想让你绑定!')
+                bot.SendTo(contact, '绑定失败,interBot不想让你绑定!')
                 return
             if not setid(member.qq, osuid, member.name, contact.qq, osuname):
-                bot.SendTo(contact, '绑定失败,dalouBot数据库被玩坏了!')
+                bot.SendTo(contact, '绑定失败,interBot数据库被玩坏了!')
                 return
             bot.SendTo(contact, '绑定成功,使用myinfo查询信息!')
         elif '!myinfo' == content:
@@ -111,19 +111,19 @@ def onQQMessage(bot, contact, member, content):
             name = content.split(' ')[1]
             if name not in testuser:
                 testuser.append(name)
-            bot.SendTo(contact, 'dalouBot奸视列表:'+str(testuser))
+            bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
         elif '!rem' in content and member.qq == '405622418':
             name = content.split(' ')[1]
             if name in testuser:
                 testuser.remove(name)
-            bot.SendTo(contact, 'dalouBot奸视列表:'+str(testuser))
+            bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
         elif '!js' == content:
             if not testuser:
-                bot.SendTo(contact, 'dalou没有在奸视任何人')
+                bot.SendTo(contact, 'inter没有在奸视任何人')
             else:
-                bot.SendTo(contact, 'dalouBot奸视列表:'+str(testuser))
+                bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
         elif '!check' in content:
-            bot.SendTo(contact, 'dalou手动计算中...请骚等!')
+            bot.SendTo(contact, 'inter手动计算中...请骚等!')
             uid = content[7:]
             #取qq绑定
             if not uid:
@@ -136,7 +136,7 @@ def onQQMessage(bot, contact, member, content):
             if not pp:
                 bot.SendTo(contact, '没有pp,下一个!')
                 return
-            msg = '%s\npp:%spp\ndalou手算:%spp\n目前潜力:%spp' % (uid,pp,pp2,maxpp)
+            msg = '%s\npp:%spp\ninter手算:%spp\n目前潜力:%spp' % (uid,pp,pp2,maxpp)
             bot.SendTo(contact, msg)
         elif '!test' in content:
             uid = content[6:]
@@ -246,10 +246,10 @@ def onQQMessage(bot, contact, member, content):
             osuname = content.split(' ')[1]
             osuid = get_osuid(osuname)
             if not osuid:
-                bot.SendTo(contact, '绑定失败,dalouBot不想让你绑定!')
+                bot.SendTo(contact, '绑定失败,interBot不想让你绑定!')
                 return
             if not setid(contact.qq, osuid, contact.name, 13547, osuname):
-                bot.SendTo(contact, '绑定失败,dalouBot数据库被玩坏了!')
+                bot.SendTo(contact, '绑定失败,interBot数据库被玩坏了!')
                 return
             bot.SendTo(contact, '绑定成功,使用myinfo查询信息!')
         elif '!myinfo' == content:
@@ -263,7 +263,7 @@ def onQQMessage(bot, contact, member, content):
             testuser.append(content.split(' ')[1])
             bot.SendTo(contact, '用户切换:'+testuser)
         elif '!check' in content:
-            bot.SendTo(contact, 'dalou手动计算中...请骚等!')
+            bot.SendTo(contact, 'inter手动计算中...请骚等!')
             uid = content[7:]
             #取qq绑定
             if not uid:
@@ -276,7 +276,7 @@ def onQQMessage(bot, contact, member, content):
             if not pp:
                 bot.SendTo(contact, '没有pp,下一个!')
                 return
-            msg = '%s\npp:%spp\ndalou手算:%spp\n目前潜力:%spp' % (uid,pp,pp2,maxpp)
+            msg = '%s\npp:%spp\ninter手算:%spp\n目前潜力:%spp' % (uid,pp,pp2,maxpp)
             bot.SendTo(contact, msg)
 
 
@@ -857,13 +857,13 @@ def get_card_msg(username):
 
 def get_help():
     '''帮助'''
-    msg = '''dalouBot v1.2
+    msg = '''interBot v1.2
 1.rbq(暂时关闭)
 2.myrbq
 3.setid xxx(请绑定,后续有用)
 4.myinfo
 5.getid@别人(获取群员osuid)
-6.dalou的奸视(new)(需要权限)
+6.inter的奸视(new)(需要权限)
 7.check xxx(new)(使用大数据支持)
 8.js 奸视列表(new)
 9.test 健康指数(new)(dalou公式)
