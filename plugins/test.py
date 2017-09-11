@@ -237,7 +237,7 @@ def onQQMessage(bot, contact, member, content):
                 uid = res[5]
             msg = get_card_msg(uid)
             bot.SendTo(contact, msg)
-        elif '!map' == content:
+        elif '!map' in content:
             uid = content[5:]
             #取qq绑定
             if not uid:
@@ -420,13 +420,14 @@ def tuijian(uid):
         pp = float(get_user_pp(uid))
         cur = get_cursor()
         sql = '''
-            SELECT beatmap_id,count(beatmap_id) num FROM osu_user ta INNER JOIN osu_bp tb on ta.user_id = tb.user_id where ta.pp_raw BETWEEN %s and %s GROUP BY beatmap_id ORDER BY num desc limit 1; 
+            SELECT beatmap_id,count(beatmap_id) num FROM osu_user ta INNER JOIN osu_bp tb on ta.user_id = tb.user_id where ta.pp_raw BETWEEN %s and %s GROUP BY beatmap_id ORDER BY num desc limit 0,20; 
         '''
-        cur.execute(sql, [pp-10,pp+10])
+        cur.execute(sql, [pp, pp+20])
         res = cur.fetchall()
         if not res:
             return 0
-        msg = 'inter推荐给%s的图:https://osu.ppy.sh/b/%s  推荐指数:%s' %(uid,res[0][0],res[0][1])
+        ret = random.choice(res)
+        msg = 'inter推荐给%s的图:https://osu.ppy.sh/b/%s  推荐指数:%s' %(uid,ret[0],ret[1])
         return  msg
     except:
         traceback.print_exc()
