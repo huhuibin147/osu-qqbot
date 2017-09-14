@@ -1,0 +1,26 @@
+syntax = "proto3";  
+
+service Greeter {  
+
+  rpc SayHello (HelloRequest) returns (HelloReply) {}  
+
+  rpc PlusTest (PlusRequest) returns (PlusResponse) {}
+}  
+  
+
+message HelloRequest {  
+  string name = 1;  
+}  
+  
+
+message HelloReply {  
+  string message = 1;  
+}  
+
+message PlusRequest {
+    int32 num1 = 1;
+    int32 num2 = 2;
+}
+message PlusResponse {
+    int32 result = 1;
+}

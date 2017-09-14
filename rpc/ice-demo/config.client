@@ -1,0 +1,2 @@
+Hello.Proxy=hello:tcp -p 10000
+Ice.Default.Host=localhost
