@@ -1,6 +1,8 @@
 # osu-qqbot 
 一个用于查询osu信息和统计增长的qqbot</br>
-（基于webQQ协议实现的最简单版本Bot,有兴趣了解协议的可阅读主程序）</br>
+基于webQQ协议实现的最简单版本Bot,有兴趣了解协议的可阅读主程序</br>
+
+
 环境: python3.5 + mysql5.7</br>
 运行环境：Windows/Linux(二维码图片可能无法打开)</br>
 python模块: requests,pymysql</br>
