@@ -4,7 +4,7 @@
 
 
 环境: python3.5 + mysql5.7</br>
-运行环境：Windows/Linux(二维码图片可能无法打开)</br>
+运行环境：Windows/~~Linux(二维码图片可能无法打开)~~</br>
 python模块: requests,pymysql</br>
 
 qq命令:</br>
