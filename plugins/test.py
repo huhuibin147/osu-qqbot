@@ -14,6 +14,7 @@ import multiprocessing
 
 import mods
 import Config
+import qqbot.facemap
 
 rbq_614892339 = set([])
 rbq_list_614892339 = {}            
@@ -33,6 +34,8 @@ aite = [
     ]
 group_list = ['614892339','514661057','641236878']
 
+
+
 def onQQMessage(bot, contact, member, content):
     #contact :  ctype/qq/uin/nick/mark/card/name 
     #群限制 Q号 614892339
@@ -50,6 +53,8 @@ def onQQMessage(bot, contact, member, content):
                 bot.SendTo(contact, '成功召唤10费dalou!')
         # if content == '!help':
         #     bot.SendTo(contact, 'dalou只会打爆你!')
+        elif content == '!bq':
+            bot.SendTo(contact, '/'+random.choice(qqbot.facemap.faceText))
         elif content == '!inter':
             msg = get_help()
             bot.SendTo(contact, msg)
