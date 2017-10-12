@@ -154,33 +154,6 @@ def onQQMessage(bot, contact, member, content):
                 uid = res[5]
             msg = health_check(uid)
             bot.SendTo(contact, msg)
-        # elif '!test' in content:
-        #     uid = content[6:]
-        #     #取qq绑定
-        #     if not uid:
-        #         res = get_osuinfo_byqq(member.qq)
-        #         if not res:
-        #             bot.SendTo(contact, member.name+'未绑定osuid')
-        #             return
-        #         uid = res[5]
-        #     value = dalou_test(uid)
-        #     if value < 1:
-        #         level = '极致不健康'
-        #     elif 5 > value >= 1:
-        #         level = '灰常不健康'
-        #     elif 10 > value >= 5:
-        #         level = '不健康'
-        #     elif 15 > value >= 10:
-        #         level = '介于健康与不健康'
-        #     elif 25 > value >= 15:
-        #         level = '健康'
-        #     elif 100 > value >= 30:
-        #         level = '健康过度'
-        #     elif value >= 100:
-        #         level = '健康溢出'
-        #     msg = '%s\n健康指数:%s\nleve:%s' % (uid,value,level)
-        #     # msg = html.parser.unescape(msg)
-        #     bot.SendTo(contact, msg)
         elif '!bbp' in content:
             uid = content[5:]
             #取qq绑定
@@ -254,46 +227,14 @@ def onQQMessage(bot, contact, member, content):
             bot.SendTo(contact, 'inter去ppy找图了,请骚等...')
             msg = tuijian(uid)
             bot.SendTo(contact, msg)
-    
+        elif '新番' == content:
+            msg = get_bangumi(bot, contact, num = 3)
+            bot.SendTo(contact, msg)
+        elif '新番排行' == content:
+            msg = get_bangumi_rank(bot, contact, num = 5)
+            bot.SendTo(contact, msg)
 
-    #测试
-    if contact.ctype == 'buddy' and contact.qq == '405622418':
-        if '!setid' in content:
-            osuname = content.split(' ')[1]
-            osuid = get_osuid(osuname)
-            if not osuid:
-                bot.SendTo(contact, '绑定失败,interBot不想让你绑定!')
-                return
-            if not setid(contact.qq, osuid, contact.name, 13547, osuname):
-                bot.SendTo(contact, '绑定失败,interBot数据库被玩坏了!')
-                return
-            bot.SendTo(contact, '绑定成功,使用myinfo查询信息!')
-        elif '!myinfo' == content:
-            info = get_myinfo(contact.qq)
-            if not info:
-                bot.SendTo(contact, '未绑定,请使用setid!')
-                return
-            msg = "%s\nosu:%s\nosuid:%s" % (contact.name, info[5], info[3])
-            bot.SendTo(contact, msg)
-        elif '!set' in content:
-            testuser.append(content.split(' ')[1])
-            bot.SendTo(contact, '用户切换:'+testuser)
-        elif '!check' in content:
-            bot.SendTo(contact, 'inter手动计算中...请骚等!')
-            uid = content[7:]
-            #取qq绑定
-            if not uid:
-                res = get_osuinfo_byqq(member.qq)
-                if not res:
-                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
-                    return
-                uid = res[5]
-            pp,pp2,maxpp = check_user(uid)
-            if not pp:
-                bot.SendTo(contact, '没有pp,下一个!')
-                return
-            msg = '%s\npp:%spp\ninter手算:%spp\n目前潜力:%spp' % (uid,pp,pp2,maxpp)
-            bot.SendTo(contact, msg)
+    
 
 
 #定时任务
@@ -847,10 +788,16 @@ def get_card(username):
         '''
         cur.execute(sql, username)
         res = cur.fetchall()
+        #卡池不存在,手动去获取信息
         if not res:
-            return 0
-        user = res[0]
-        #('louxinye', 4329.1699, 98.79, '17268')
+            user_info = get_user_info(username)
+            if not user_info:
+                return 0
+            insertUser(user_info)
+            return -1
+        else:
+            user = res[0]
+        #('xxx', 4329.1699, 98.79, '17268')
         if  0 <= user[1] <= 2000:
             level = 1
         elif 2000 < user[1] <= 3000:
@@ -900,31 +847,124 @@ def get_card(username):
 
 def get_card_msg(username):
     card_tup = get_card(username)
-    if not card_tup:
-        msg = '%s不在卡池中!' % username
+    if card_tup == -1:
+        msg = '%s不在卡池中,自动录入卡池!' % username
+        return msg
+    elif card_tup == 0:
+        msg = '肯定不是inter的bug,是你的问题!'
         return msg
     msg = '%s\n星级:%s\n攻击:%s\n防御:%s\n生命:%s' % (card_tup[0],card_tup[1],card_tup[2],card_tup[3],card_tup[4])
     return msg
 
+def insertUser(info):
+    '''插入'''
+    try:
+        cur = get_cursor()
+        sql = '''
+            insert into osu_user
+                (user_id, username, tth, ranked_score, total_score, pp_rank, level, pp_raw, acc, country, pc) 
+            values
+                (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        '''
+        tth = int(info.get('count300',0))+int(info.get('count100',0))+int(info.get('count50',0))
+        args = [info.get('user_id'), info.get('username'), tth, info.get('ranked_score'), info.get('total_score'), info.get('pp_rank'), info.get('level'), info.get('pp_raw'), round(float(info.get('accuracy')),2), info.get('country'), info.get('playcount')]
+        result = cur.execute(sql, args)
+        conn.commit()
+        print('insert '+ info.get('user_id'))
+    except:
+        conn.rollback()
+        traceback.print_exc()
 
+def get_user_info(uid):
+    '''osu用户完整信息'''
+    print ("uid:%s" % uid)
+    url = 'https://osu.ppy.sh/api/get_user?k=%s&u=%s' % (osu_api_key, uid)
+    res = get_url(url,3)
+    while res == 0:
+        res = get_url(url)
+    result = json.loads(res.text)
+    return result[0]
+
+import bili
+
+def get_bangumi_rank(bot, contact, num=''):
+    key = 'get_bangumi_rank'
+    res = redis_client.get(key)
+    if not res:
+        bot.SendTo(contact, 'inter忘记了,去B站看看,请骚等...')
+        bi = bili.bili()
+        bi.start()
+        bi.getUrl()
+        bangumi = bi.get_bangumi_rank()
+        bi.stop()
+        #设置半天更新时间
+        redis_client.setex(key, json.dumps(bangumi), 3600*1)
+    else:
+        bangumi = json.loads(res)
+    if num:
+        bangumi = bangumi[0:num]
+    msg = '\n'.join(bangumi)
+    msg = '新番排行\n' + msg
+    return msg
+
+def get_bangumi(bot, contact, num=''):
+    key = 'get_bangumi'
+    res = redis_client.get(key)
+    if not res:
+        bot.SendTo(contact, 'inter忘记了,去B站看看,请骚等...')
+        bi = bili.bili()
+        bi.start()
+        bi.getUrl()
+        bangumi = bi.get_bangumi()
+        bi.stop()
+        #设置半天更新时间
+        redis_client.setex(key, json.dumps(bangumi), 3600*1)
+    else:
+        bangumi = json.loads(res)
+    if num:
+        bangumi = random.sample(bangumi, num)
+    msg = '\n'.join(bangumi)
+    msg = 'inter推荐新番\n' + msg
+    return msg
+
+# def get_bangumi_rank(bot, contact, num=''):
+#     key = 'get_bangumi_rank'
+#     res = redis_client.get(key)
+#     if not res:
+#         bot.SendTo(contact, 'inter忘记了,去B站看看,请骚等...')
+#         bi = bili.bili()
+#         bi.start()
+#         bi.getUrl()
+#         bangumi = bi.get_bangumi()
+#         bi.stop()
+#         #设置半天更新时间
+#         redis_client.setex(key, json.dumps(bangumi), 3600*1)
+#     else:
+#         bangumi = json.loads(res)
+#     if num:
+#         bangumi = random.sample(bangumi, num)
+#     msg = '\n'.join(bangumi)
+#     msg = 'inter推荐新番\n' + msg
+#     return msg
 
 def get_help():
     '''帮助'''
     msg = '''interBot v1.2
-1.rbq(暂时关闭)
+1.rbq(不知道为什么被关了)
 2.myrbq
-3.setid xxx(请绑定,后续有用)
+3.setid xxx(请绑定)
 4.myinfo
 5.getid@别人(获取群员osuid)
-6.inter的奸视(需要权限)
-7.check xxx(使用大数据支持)
+6.set,inter的奸视(需要权限)
+7.check xxx(inter随机乱算的)
 8.js 奸视列表
-9.test 健康指数(new(dalou公式)
+9.test 健康指数(dalou公式)
 10.bbp
 11.sp
 12.skill
 13.vssk
 14.upage xx,2
 15.map(new)推荐pp图
-16.接受功能建议'''
+16.card 卡牌
+17.接受功能建议'''
     return msg
