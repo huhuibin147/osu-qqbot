@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-
+import time
 import random
 import pymysql
 import traceback
+import threading
 import json
 import requests
 import redis
@@ -41,200 +42,240 @@ def onQQMessage(bot, contact, member, content):
     #群限制 Q号 614892339
     if contact.ctype == 'group':
         if contact.qq not in group_list:
-            if '!' in content:
-                bot.SendTo(contact, '幕后黑手被dalou打爆,只留下一个地址:%s' % others_github)
+            # if '!' in content:
+            #     bot.SendTo(contact, '幕后黑手被dalou打爆,只留下一个地址:%s' % others_github)
             return
-        if '@ME' in content:
-            msg = random.choice(aite)
-            bot.SendTo(contact, msg)
+
+        #通用线程函数
+        t = threading.Thread(target=_method, args=(bot, contact, member, content))
+        t.start()
+        #名词解释
+        t_explain = threading.Thread(target=osu_explain,args=(bot, contact, member, content))
+        t_explain.start()
+
         if 'dalou' in content:
             num = random.randint(0,100)
             if num > 98:
                 bot.SendTo(contact, '成功召唤10费dalou!')
-        # if content == '!help':
-        #     bot.SendTo(contact, 'dalou只会打爆你!')
-        elif content == '!bq':
-            bot.SendTo(contact, '/'+random.choice(qqbot.facemap.faceText))
-        elif content == '!inter':
-            msg = get_help()
-            bot.SendTo(contact, msg)
-        # elif content == '!rbq':
-        #     r = random.choice(list(rbq_614892339))
-        #     msg = '%s 获得了一个 %s 作为rbq' % (member.name, r)
-        #     if rbq_list_614892339.get(member.qq) is None:
-        #         rbq_list_614892339[member.qq] = set([r])
-        #     elif len(rbq_list_614892339[member.qq]) == 5:
-        #         rem_r = random.choice(list(rbq_list_614892339[member.qq]))
-        #         msg = 'rbq太多了,%s 已被抛弃!' % rem_r
-        #         rbq_list_614892339[member.qq].remove(rem_r)
-        #     else:
-        #         rbq_list_614892339[member.qq].add(r)                
-        #     bot.SendTo(contact, msg)
-        elif content == '!myrbq':
-            if rbq_list_614892339.get(member.qq) is None or len(rbq_list_614892339.get(member.qq)) == 0:
-                bot.SendTo(contact, '你没有rbq醒醒!')
-                return
-            msg = '%s 有%s个rbq:\n' % (member.name, len(rbq_list_614892339[member.qq]))
-            r_list = list(rbq_list_614892339[member.qq])
-            for i,r in enumerate(r_list):
-                msg2 = '%s.%s\n' % (str(i+1), r)
-                msg += msg2
-            msg = msg[0:-1]
-            bot.SendTo(contact, msg)
-        elif '!setid' in content:
-            osuname = content.split(' ')[1]
-            osuid = get_osuid(osuname)
-            if not osuid:
-                bot.SendTo(contact, '绑定失败,interBot不想让你绑定!')
-                return
-            if not setid(member.qq, osuid, member.name, contact.qq, osuname):
-                bot.SendTo(contact, '绑定失败,interBot数据库被玩坏了!')
-                return
-            bot.SendTo(contact, '绑定成功,使用myinfo查询信息!')
-        elif '!myinfo' == content:
-            res = get_myinfo(member.qq)
-            if not res:
-                bot.SendTo(contact, '未绑定,请使用setid!')
-                return
-            home_url = 'https://osu.ppy.sh/u/%s' % (res[3])
-            msg = "%s\nosu:%s\nosuid:%s\nmoney:%s\nbagnum:%s\n%s" % (member.name, res[5], res[3], res[6], res[7], home_url)
-            bot.SendTo(contact, msg) 
-        elif '!getid' in content:
-            content = content.rstrip()
-            name = content.split('@')[1]
-            g = bot.List('group', str(contact.qq))[0]
-            name_str = 'card=%s' % name
-            qq = bot.List(g, name_str)[0].qq
-            res = get_osuinfo_byqq(qq)
-            if not res:
-                bot.SendTo(contact, name+'未绑定osuid')
-                return
-            home_url = 'https://osu.ppy.sh/u/%s' % (res[3])
-            msg = "%s\nosu:%s\nosuid:%s\n%s" % (name, res[5], res[3], home_url)
-            bot.SendTo(contact, msg)
-        elif '!set' in content and member.qq == '405622418':
-            name = content.split(' ')[1]
-            if name not in testuser:
-                testuser.append(name)
-            bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
-        elif '!rem' in content and member.qq == '405622418':
-            name = content.split(' ')[1]
-            if name in testuser:
-                testuser.remove(name)
-            bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
-        elif '!js' == content:
-            if not testuser:
-                bot.SendTo(contact, 'inter没有在奸视任何人')
-            else:
-                bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
-        elif '!check' in content:
-            bot.SendTo(contact, 'inter手动计算中...请骚等!')
-            uid = content[7:]
-            #取qq绑定
-            if not uid:
-                res = get_osuinfo_byqq(member.qq)
-                if not res:
-                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
-                    return
-                uid = res[5]
-            pp,pp2,maxpp = check_user(uid)
-            if not pp:
-                bot.SendTo(contact, '没有pp,下一个!')
-                return
-            msg = '%s\npp:%spp\ninter手算:%spp\n目前潜力:%spp' % (uid,pp,pp2,maxpp)
-            bot.SendTo(contact, msg)
-        elif '!test' in content:
-            uid = content[6:]
-            #取qq绑定
-            if not uid:
-                res = get_osuinfo_byqq(member.qq)
-                if not res:
-                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
-                    return
-                uid = res[5]
-            msg = health_check(uid)
-            bot.SendTo(contact, msg)
-        elif '!bbp' in content:
-            uid = content[5:]
-            #取qq绑定
-            if not uid:
-                res = get_osuinfo_byqq(member.qq)
-                if not res:
-                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
-                    return
-                uid = res[5]
-            msg = get_bp_info(uid)
-            bot.SendTo(contact, msg)
-        elif '!sp' == content:
-            msg = get_xinrenqun_replay()
-            bot.SendTo(contact, msg)
-        elif '!skill' in content:
-            uid = content[6:]
-            #取qq绑定
-            if not uid:
-                res = get_osuinfo_byqq(member.qq)
-                if not res:
-                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
-                    return
-                uid = res[5]
-            msg = get_skill(uid)
-            bot.SendTo(contact, msg)
-        elif '!vssk' in content:
-            ulist = content[6:].split(',')
-            if len(ulist) == 1:
-                #取qq绑定
-                res = get_osuinfo_byqq(member.qq)
-                if not res:
-                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
-                    return
-                u1 = res[5]
-                u2 = content[6:]
-            elif len(ulist) == 2:
-                u1 = ulist[0]
-                u2 = ulist[1]
-            else:
-                bot.SendTo(contact, '不想理你!')
-            msg = skill_vs(u1,u2)
-            bot.SendTo(contact, msg)
-        elif '!upage' in content:
-            slist = content[7:].split(',')
-            if len(slist) == 1:
-                page = 1
-            else:
-                page = int(slist[1])
-            msg = get_userpage(slist[0], page)
-            bot.SendTo(contact, msg)
-        elif '!card' in content:
-            uid = content[6:]
-            #取qq绑定
-            if not uid:
-                res = get_osuinfo_byqq(member.qq)
-                if not res:
-                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
-                    return
-                uid = res[5]
-            msg = get_card_msg(uid)
-            bot.SendTo(contact, msg)
-        elif '!map' in content:
-            uid = content[5:]
-            #取qq绑定
-            if not uid:
-                res = get_osuinfo_byqq(member.qq)
-                if not res:
-                    bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
-                    return
-                uid = res[5]
-            bot.SendTo(contact, 'inter去ppy找图了,请骚等...')
-            msg = tuijian(uid)
-            bot.SendTo(contact, msg)
-        elif '新番' == content:
-            msg = get_bangumi(bot, contact, num = 3)
-            bot.SendTo(contact, msg)
-        elif '新番排行' == content:
-            msg = get_bangumi_rank(bot, contact, num = 5)
-            bot.SendTo(contact, msg)
+
+        return
 
     
+def _method(bot, contact, member, content):
+    
+    if '@ME' in content:
+        msg = random.choice(aite)
+        bot.SendTo(contact, msg)
+    # if content == '!help':
+    #     bot.SendTo(contact, 'dalou只会打爆你!')
+    elif content == '!bq':
+        bot.SendTo(contact, '/'+random.choice(qqbot.facemap.faceText))
+    elif content == '!inter':
+        msg = get_help()
+        bot.SendTo(contact, msg)
+    # elif content == '!rbq':
+    #     r = random.choice(list(rbq_614892339))
+    #     msg = '%s 获得了一个 %s 作为rbq' % (member.name, r)
+    #     if rbq_list_614892339.get(member.qq) is None:
+    #         rbq_list_614892339[member.qq] = set([r])
+    #     elif len(rbq_list_614892339[member.qq]) == 5:
+    #         rem_r = random.choice(list(rbq_list_614892339[member.qq]))
+    #         msg = 'rbq太多了,%s 已被抛弃!' % rem_r
+    #         rbq_list_614892339[member.qq].remove(rem_r)
+    #     else:
+    #         rbq_list_614892339[member.qq].add(r)                
+    #     bot.SendTo(contact, msg)
+    elif content == '!myrbq':
+        if rbq_list_614892339.get(member.qq) is None or len(rbq_list_614892339.get(member.qq)) == 0:
+            bot.SendTo(contact, '你没有rbq醒醒!')
+            return
+        msg = '%s 有%s个rbq:\n' % (member.name, len(rbq_list_614892339[member.qq]))
+        r_list = list(rbq_list_614892339[member.qq])
+        for i,r in enumerate(r_list):
+            msg2 = '%s.%s\n' % (str(i+1), r)
+            msg += msg2
+        msg = msg[0:-1]
+        bot.SendTo(contact, msg)
+    elif '!setid' in content:
+        osuname = content.split(' ')[1]
+        osuid = get_osuid(osuname)
+        if not osuid:
+            bot.SendTo(contact, '绑定失败,interBot不想让你绑定!')
+            return
+        if not setid(member.qq, osuid, member.name, contact.qq, osuname):
+            bot.SendTo(contact, '绑定失败,interBot数据库被玩坏了!')
+            return
+        bot.SendTo(contact, '绑定成功,使用myinfo查询信息!')
+    elif '!myinfo' == content:
+        res = get_myinfo(member.qq)
+        if not res:
+            bot.SendTo(contact, '未绑定,请使用setid!')
+            return
+        home_url = 'https://osu.ppy.sh/u/%s' % (res[3])
+        msg = "%s\nosu:%s\nosuid:%s\nmoney:%s\nbagnum:%s\n%s" % (member.name, res[5], res[3], res[6], res[7], home_url)
+        bot.SendTo(contact, msg) 
+    elif '!getid' in content:
+        content = content.rstrip()
+        name = content.split('@')[1]
+        g = bot.List('group', str(contact.qq))[0]
+        name_str = 'card=%s' % name
+        qq = bot.List(g, name_str)[0].qq
+        res = get_osuinfo_byqq(qq)
+        if not res:
+            bot.SendTo(contact, name+'未绑定osuid')
+            return
+        home_url = 'https://osu.ppy.sh/u/%s' % (res[3])
+        msg = "%s\nosu:%s\nosuid:%s\n%s" % (name, res[5], res[3], home_url)
+        bot.SendTo(contact, msg)
+    elif '!set' in content and member.qq == '405622418':
+        name = content.split(' ')[1]
+        if name not in testuser:
+            testuser.append(name)
+        bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
+    elif '!rem' in content and member.qq == '405622418':
+        name = content.split(' ')[1]
+        if name in testuser:
+            testuser.remove(name)
+        bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
+    elif '!js' == content:
+        if not testuser:
+            bot.SendTo(contact, 'inter没有在奸视任何人')
+        else:
+            bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
+    elif '!check' in content:
+        bot.SendTo(contact, 'inter手动计算中...请骚等!')
+        uid = content[7:]
+        #取qq绑定
+        if not uid:
+            res = get_osuinfo_byqq(member.qq)
+            if not res:
+                bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+                return
+            uid = res[5]
+        pp,pp2,maxpp = check_user(uid)
+        if not pp:
+            bot.SendTo(contact, '没有pp,下一个!')
+            return
+        msg = '%s\npp:%spp\ninter手算:%spp\n目前潜力:%spp' % (uid,pp,pp2,maxpp)
+        bot.SendTo(contact, msg)
+    elif '!test' in content:
+        uid = content[6:]
+        #取qq绑定
+        if not uid:
+            res = get_osuinfo_byqq(member.qq)
+            if not res:
+                bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+                return
+            uid = res[5]
+        msg = health_check(uid)
+        bot.SendTo(contact, msg)
+    elif '!bbp' in content:
+        uid = content[5:]
+        #取qq绑定
+        if not uid:
+            res = get_osuinfo_byqq(member.qq)
+            if not res:
+                bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+                return
+            uid = res[5]
+        msg = get_bp_info(uid)
+        bot.SendTo(contact, msg)
+    elif '!sp' == content:
+        msg = get_xinrenqun_replay()
+        bot.SendTo(contact, msg)
+    elif '!skill' in content:
+        uid = content[6:]
+        #取qq绑定
+        if not uid:
+            res = get_osuinfo_byqq(member.qq)
+            if not res:
+                bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+                return
+            uid = res[5]
+        msg = get_skill(uid)
+        bot.SendTo(contact, msg)
+    elif '!vssk' in content:
+        ulist = content[6:].split(',')
+        if len(ulist) == 1:
+            #取qq绑定
+            res = get_osuinfo_byqq(member.qq)
+            if not res:
+                bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+                return
+            u1 = res[5]
+            u2 = content[6:]
+        elif len(ulist) == 2:
+            u1 = ulist[0]
+            u2 = ulist[1]
+        else:
+            bot.SendTo(contact, '不想理你!')
+        msg = skill_vs(u1,u2)
+        bot.SendTo(contact, msg)
+    elif '!upage' in content:
+        slist = content[7:].split(',')
+        if len(slist) == 1:
+            page = 1
+        else:
+            page = int(slist[1])
+        msg = get_userpage(slist[0], page)
+        bot.SendTo(contact, msg)
+    elif '!card' in content:
+        uid = content[6:]
+        #取qq绑定
+        if not uid:
+            res = get_osuinfo_byqq(member.qq)
+            if not res:
+                bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+                return
+            uid = res[5]
+        msg = get_card_msg(uid)
+        bot.SendTo(contact, msg)
+    elif '!map' in content:
+        uid = content[5:]
+        #取qq绑定
+        if not uid:
+            res = get_osuinfo_byqq(member.qq)
+            if not res:
+                bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+                return
+            uid = res[5]
+        bot.SendTo(contact, 'inter去ppy找图了,请骚等...')
+        msg = tuijian(uid)
+        bot.SendTo(contact, msg)
+    elif '新番' == content:
+        msg = get_bangumi(bot, contact, num = 3)
+        bot.SendTo(contact, msg)
+    elif '新番排行' == content:
+        msg = get_bangumi_rank(bot, contact, num = 5)
+        bot.SendTo(contact, msg)
+    elif 'osu' == content:
+        w = random.choice(list(word_list))
+        msg = w + ':' + Config.osu_words[w]
+        bot.SendTo(contact, msg)
+    elif '!pk' in content:
+        osuname2 = content[4:]
+        res = get_osuinfo_byqq(member.qq)
+        osuname = res[5]
+        if osuname == osuname2:
+            bot.SendTo(contact, '你想爆了自己???')
+            return
+        if not res:
+            bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+            return
+        else:
+            res2 = get_from_osu_user(osuname2)
+            if not res2:
+                bot.SendTo(contact, '这个人不在池中拒绝pk')
+                return
+            num = random.randint(0,100)
+            if num > 49:
+                msg = '%s %s %s!' %(osuname, random.choice(att_type), osuname2)
+            else:
+                msg = '%s %s %s!' %(osuname2, random.choice(att_type), osuname)
+            bot.SendTo(contact, msg)
+            return
+
+att_type = ['一脚踢爆了','单手打爆了','用脚打爆了','单戳解决了','acc碾压了','一串连打带走了','随手fc解决了','高速全屏跳带走了']
 
 
 #定时任务
@@ -388,6 +429,7 @@ def get_osuinfo_byqq(qq):
         '''
         cur.execute(sql, qq)
         res = cur.fetchall()
+        print (res)
         if not res:
             return 0
         return  res[0]
@@ -898,7 +940,7 @@ def get_bangumi_rank(bot, contact, num=''):
         bangumi = bi.get_bangumi_rank()
         bi.stop()
         #设置半天更新时间
-        redis_client.setex(key, json.dumps(bangumi), 3600*1)
+        redis_client.setex(key, json.dumps(bangumi), 3600*3)
     else:
         bangumi = json.loads(res)
     if num:
@@ -918,7 +960,7 @@ def get_bangumi(bot, contact, num=''):
         bangumi = bi.get_bangumi()
         bi.stop()
         #设置半天更新时间
-        redis_client.setex(key, json.dumps(bangumi), 3600*1)
+        redis_client.setex(key, json.dumps(bangumi), 3600*3)
     else:
         bangumi = json.loads(res)
     if num:
@@ -927,29 +969,36 @@ def get_bangumi(bot, contact, num=''):
     msg = 'inter推荐新番\n' + msg
     return msg
 
-# def get_bangumi_rank(bot, contact, num=''):
-#     key = 'get_bangumi_rank'
-#     res = redis_client.get(key)
-#     if not res:
-#         bot.SendTo(contact, 'inter忘记了,去B站看看,请骚等...')
-#         bi = bili.bili()
-#         bi.start()
-#         bi.getUrl()
-#         bangumi = bi.get_bangumi()
-#         bi.stop()
-#         #设置半天更新时间
-#         redis_client.setex(key, json.dumps(bangumi), 3600*1)
-#     else:
-#         bangumi = json.loads(res)
-#     if num:
-#         bangumi = random.sample(bangumi, num)
-#     msg = '\n'.join(bangumi)
-#     msg = 'inter推荐新番\n' + msg
-#     return msg
+word_list = Config.osu_words.keys()
+def osu_explain(bot, contact, member, content):
+    '''osu名词自动解释'''
+    if '是什么' in content:
+        for w in word_list:
+            if w in content:
+                msg = w + ':' + Config.osu_words[w]
+                bot.SendTo(contact, msg)
+                return
+
+def get_from_osu_user(username):
+    '''查库'''
+    try:
+        cur = get_cursor()
+        sql = '''
+            SELECT * FROM osu_user where username = %s
+        '''
+        cur.execute(sql, username)
+        res = cur.fetchall()
+        print (res)
+        if not res:
+            return 0
+        return  res[0]
+    except:
+        traceback.print_exc()
+        return 0
 
 def get_help():
     '''帮助'''
-    msg = '''interBot v1.2
+    msg = '''interBot v1.3(多线程版本)
 1.rbq(不知道为什么被关了)
 2.myrbq
 3.setid xxx(请绑定)
@@ -964,7 +1013,11 @@ def get_help():
 12.skill
 13.vssk
 14.upage xx,2
-15.map(new)推荐pp图
+15.map 低端推荐pp图
 16.card 卡牌
-17.接受功能建议'''
+17.新番/新番排行(new)
+18.osu 名词解释(new)
+19.接受功能建议'''
     return msg
+
+# 解锁8号彩蛋 1061566571
