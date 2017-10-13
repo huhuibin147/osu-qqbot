@@ -8,6 +8,7 @@ import json
 import requests
 import redis
 import html.parser
+import os
 import re
 import datetime
 import math
@@ -15,6 +16,7 @@ import multiprocessing
 
 import mods
 import Config
+import post2site
 import qqbot.facemap
 
 rbq_614892339 = set([])
@@ -66,13 +68,16 @@ def _method(bot, contact, member, content):
     if '@ME' in content:
         msg = random.choice(aite)
         bot.SendTo(contact, msg)
+        return
     # if content == '!help':
     #     bot.SendTo(contact, 'dalou只会打爆你!')
     elif content == '!bq':
         bot.SendTo(contact, '/'+random.choice(qqbot.facemap.faceText))
+        return
     elif content == '!inter':
         msg = get_help()
         bot.SendTo(contact, msg)
+        return
     # elif content == '!rbq':
     #     r = random.choice(list(rbq_614892339))
     #     msg = '%s 获得了一个 %s 作为rbq' % (member.name, r)
@@ -96,6 +101,7 @@ def _method(bot, contact, member, content):
             msg += msg2
         msg = msg[0:-1]
         bot.SendTo(contact, msg)
+        return
     elif '!setid' in content:
         osuname = content.split(' ')[1]
         osuid = get_osuid(osuname)
@@ -106,6 +112,7 @@ def _method(bot, contact, member, content):
             bot.SendTo(contact, '绑定失败,interBot数据库被玩坏了!')
             return
         bot.SendTo(contact, '绑定成功,使用myinfo查询信息!')
+        return
     elif '!myinfo' == content:
         res = get_myinfo(member.qq)
         if not res:
@@ -114,6 +121,7 @@ def _method(bot, contact, member, content):
         home_url = 'https://osu.ppy.sh/u/%s' % (res[3])
         msg = "%s\nosu:%s\nosuid:%s\nmoney:%s\nbagnum:%s\n%s" % (member.name, res[5], res[3], res[6], res[7], home_url)
         bot.SendTo(contact, msg) 
+        return
     elif '!getid' in content:
         content = content.rstrip()
         name = content.split('@')[1]
@@ -127,21 +135,25 @@ def _method(bot, contact, member, content):
         home_url = 'https://osu.ppy.sh/u/%s' % (res[3])
         msg = "%s\nosu:%s\nosuid:%s\n%s" % (name, res[5], res[3], home_url)
         bot.SendTo(contact, msg)
+        return
     elif '!set' in content and member.qq == '405622418':
         name = content.split(' ')[1]
         if name not in testuser:
             testuser.append(name)
         bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
+        return
     elif '!rem' in content and member.qq == '405622418':
         name = content.split(' ')[1]
         if name in testuser:
             testuser.remove(name)
         bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
+        return
     elif '!js' == content:
         if not testuser:
             bot.SendTo(contact, 'inter没有在奸视任何人')
         else:
             bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
+        return
     elif '!check' in content:
         bot.SendTo(contact, 'inter手动计算中...请骚等!')
         uid = content[7:]
@@ -158,6 +170,7 @@ def _method(bot, contact, member, content):
             return
         msg = '%s\npp:%spp\ninter手算:%spp\n目前潜力:%spp' % (uid,pp,pp2,maxpp)
         bot.SendTo(contact, msg)
+        return
     elif '!test' in content:
         uid = content[6:]
         #取qq绑定
@@ -169,6 +182,7 @@ def _method(bot, contact, member, content):
             uid = res[5]
         msg = health_check(uid)
         bot.SendTo(contact, msg)
+        return
     elif '!bbp' in content:
         uid = content[5:]
         #取qq绑定
@@ -180,9 +194,11 @@ def _method(bot, contact, member, content):
             uid = res[5]
         msg = get_bp_info(uid)
         bot.SendTo(contact, msg)
+        return
     elif '!sp' == content:
         msg = get_xinrenqun_replay()
         bot.SendTo(contact, msg)
+        return
     elif '!skill' in content:
         uid = content[6:]
         #取qq绑定
@@ -194,6 +210,7 @@ def _method(bot, contact, member, content):
             uid = res[5]
         msg = get_skill(uid)
         bot.SendTo(contact, msg)
+        return
     elif '!vssk' in content:
         ulist = content[6:].split(',')
         if len(ulist) == 1:
@@ -211,6 +228,7 @@ def _method(bot, contact, member, content):
             bot.SendTo(contact, '不想理你!')
         msg = skill_vs(u1,u2)
         bot.SendTo(contact, msg)
+        return
     elif '!upage' in content:
         slist = content[7:].split(',')
         if len(slist) == 1:
@@ -219,6 +237,7 @@ def _method(bot, contact, member, content):
             page = int(slist[1])
         msg = get_userpage(slist[0], page)
         bot.SendTo(contact, msg)
+        return
     elif '!card' in content:
         uid = content[6:]
         #取qq绑定
@@ -230,6 +249,7 @@ def _method(bot, contact, member, content):
             uid = res[5]
         msg = get_card_msg(uid)
         bot.SendTo(contact, msg)
+        return
     elif '!map' in content:
         uid = content[5:]
         #取qq绑定
@@ -242,6 +262,7 @@ def _method(bot, contact, member, content):
         bot.SendTo(contact, 'inter去ppy找图了,请骚等...')
         msg = tuijian(uid)
         bot.SendTo(contact, msg)
+        return
     elif '新番' == content:
         msg = get_bangumi(bot, contact, num = 3)
         bot.SendTo(contact, msg)
@@ -270,10 +291,52 @@ def _method(bot, contact, member, content):
             num = random.randint(0,100)
             if num > 49:
                 msg = '%s %s %s!' %(osuname, random.choice(att_type), osuname2)
+                pk_count(osuname, osuname2)
             else:
                 msg = '%s %s %s!' %(osuname2, random.choice(att_type), osuname)
+                pk_count(osuname2, osuname)
             bot.SendTo(contact, msg)
             return
+    elif '!restart' == content and member.qq == '405622418':
+        os.system('qq restart')
+        bot.SendTo(contact, 'inter5秒后重启...')
+        return
+    elif '!load' in content and member.qq == '405622418':
+        plug = content[6:]
+        os.system('qq plug '+plug)
+        bot.SendTo(contact, '插件热加载成功!')
+        return
+    elif '今日看番' == content:
+        post2site.post2site(r'C:\Users\monitor\.qqbot-tmp\plugins\t.png', contact.qq)
+        return
+
+def pk_count(winer, loser):
+    # 战绩统计
+    try:
+        key = 'pk_rec'
+        pk_rec = redis_client.get(key)
+        if not pk_rec:
+            pk_rec = {}
+        else:
+            pk_rec = json.loads(pk_rec)
+        winer_rec = pk_rec.get(winer)
+        if winer_rec:
+            winer_rec[0] += 1
+        else:
+            pk_rec[winer]=[1,0]
+
+        loser_rec = pk_rec.get(loser)
+        if loser_rec:
+            loser_rec[1] += 1
+        else:
+            pk_rec[loser]=[0,1]
+
+        print (pk_rec)
+        
+        redis_client.setex(key, json.dumps(pk_rec), 3600*60)
+    except:
+        traceback.print_exc()
+
 
 att_type = ['一脚踢爆了','单手打爆了','用脚打爆了','单戳解决了','acc碾压了','一串连打带走了','随手fc解决了','高速全屏跳带走了']
 
@@ -978,6 +1041,7 @@ def osu_explain(bot, contact, member, content):
                 msg = w + ':' + Config.osu_words[w]
                 bot.SendTo(contact, msg)
                 return
+        bot.SendTo(contact, '我累了,不想告诉你!')
 
 def get_from_osu_user(username):
     '''查库'''

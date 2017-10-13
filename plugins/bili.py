@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import time
+from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -18,7 +19,7 @@ class bili():
         # 隐式等待时间
         self.driver.implicitly_wait(10)
 
-    def getUrl(self, url='https://www.bilibili.com/'):
+    def getUrl(self, img='home.png', url='https://www.bilibili.com/'):
         # 滚动加载整个页面
         self.driver.get(url)
         self.driver.execute_script("""
@@ -46,7 +47,7 @@ class bili():
             if "scroll-done" in self.driver.title:
                 break
             time.sleep(10)
-
+        self.driver.save_screenshot(img)
         print('加载完毕!')
 
     def stop(self):
@@ -92,23 +93,47 @@ class bili():
             bangumi_rank.append(bangumi)
         return bangumi_rank
 
+    def get_element_xy(self, element):
+        left = element.location['x']
+        top = element.location['y']
+        right = element.location['x'] + element.size['width']
+        bottom = element.location['y'] + element.size['height']
+        return left,top,right,bottom
+
+    def cut_img(self, img='home.png', newimg='t.png', **kargs):
+        
+        left = kargs['left']
+        top = kargs['top']
+        right = kargs['right']
+        bottom = kargs['bottom']
+
+        im = Image.open(img) 
+        im = im.crop((left, top, right, bottom))
+        im.save(newimg)
 
 
-# def test():
-    # e = driver.find_element_by_xpath('/html/body/div[3]/div[6]/div/div[2]/section')
-    # e.screenshot('a.png')
-    # actions = webdriver.ActionChains(driver)
-    # actions.move_to_element(e)
-    # actions.perform()
 
-    # e.location #{'x':720,'y':1663}
-    # e.size #{'height':445,'width':260}
+def test():
+    # bi.getUrl(img='time_bangumi.png', url='https://bangumi.bilibili.com/anime/timeline')
+    # p = self.driver.find_element(By.XPATH, '/html/body/div[4]/div/div[2]/div[2]/div[2]')
+    # print(p.location['x'],p.location['y'],p.size['width'],p.size['height'])
+    
+    
+    left = 376 #+11
+    top = 271  #-60
+    right = 690 #+25
+    bottom = 617 #+10
+    im = Image.open('time_bangumi.png') 
+    im = im.crop((left, top, right, bottom))
+    im.save('t.png')
+    # bi.stop()
 
-    # e = driver.find_element_by_xpath('//*[@id="bili_bangumi"]/div')
 
 if __name__ == "__main__":
-    bi = bili()
-    bi.getUrl()
-    # bi.get_bangumi()
-    bi.get_bangumi_rank()
-    bi.stop()
+    # bi = bili()
+    # bi.getUrl()
+    # # bi.get_bangumi()
+    # # bi.get_bangumi_rank()
+    # bi.stop()
+    # bi.test()
+    test()
