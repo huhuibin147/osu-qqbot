@@ -405,15 +405,18 @@ def get_url(url, timeout=3, stoptimes=3 ):
         print('超时..')
         return 0
 
-conn = pymysql.connect(host='127.0.0.1',user='root',password='123456',db='osu', charset='utf8')
+def get_conn():
+    conn = pymysql.connect(host='127.0.0.1',user='root',password='123456',db='osu', charset='utf8')
+    return conn
+
 osu_api_key = 'b68fc239f6b8bdcbb766320bf4579696c270b349'
-def get_cursor():
-    return conn.cursor()
+
 
 def setid(qq, osuid, name, groupid, osuname):
     '''qq绑定osuid'''
     try:
-        cur = get_cursor()
+        conn = get_conn()
+        cur = conn.cursor()
         sql = '''
             insert into user
                 (qq, osuid, name, groupid, osuname) 
@@ -425,9 +428,13 @@ def setid(qq, osuid, name, groupid, osuname):
         args = [qq, osuid, name, groupid, osuname, osuid, osuname, name]
         result = cur.execute(sql, args)
         conn.commit()
+        
+        conn.close()
         return 1
     except:
         conn.rollback()
+        
+        conn.close()
         traceback.print_exc()
         return 0
 
@@ -443,15 +450,18 @@ def get_osuid(osuname):
         result = json.loads(res.text)
         uid = result[0]['user_id']
         print(uid)
+        conn.close()
         return uid
     except:
         traceback.print_exc()
+        conn.close()
         return 0
 
 def get_myinfo(qq):
     '''qq绑定信息'''
     try:
-        cur = get_cursor()
+        conn = get_conn()
+        cur = conn.cursor()
         sql = '''
             SELECT * FROM user where qq = %s
         '''
@@ -459,21 +469,28 @@ def get_myinfo(qq):
         res = cur.fetchall()
         if not res:
             return 0
+        
+        conn.close()
         return  res[0]
     except:
         traceback.print_exc()
+        
+        conn.close()
         return 0
 
 def tuijian(uid):
     '''低端推荐pp图'''
     try:
+        conn = get_conn()
+        cur = conn.cursor()
         pp = float(get_user_pp(uid))
-        cur = get_cursor()
         sql = '''
             SELECT beatmap_id,count(beatmap_id) num FROM osu_user ta INNER JOIN osu_bp tb on ta.user_id = tb.user_id where ta.pp_raw BETWEEN %s and %s GROUP BY beatmap_id ORDER BY num desc limit 0,20; 
         '''
         cur.execute(sql, [pp, pp+20])
         res = cur.fetchall()
+        
+        conn.close()
         if not res:
             return 0
         ret = random.choice(res)
@@ -481,23 +498,30 @@ def tuijian(uid):
         return  msg
     except:
         traceback.print_exc()
+        
+        conn.close()
         return 0
 
 def get_osuinfo_byqq(qq):
     '''查库qq对应osuid'''
     try:
-        cur = get_cursor()
+        conn = get_conn()
+        cur = conn.cursor()
         sql = '''
             SELECT * FROM user where qq = %s
         '''
         cur.execute(sql, qq)
         res = cur.fetchall()
+        
+        conn.close()
         print (res)
         if not res:
             return 0
         return  res[0]
     except:
         traceback.print_exc()
+        
+        conn.close()
         return 0
 
 def get_user_pp(uid):
@@ -547,6 +571,8 @@ def get_bp_and_pp(uid):
 def check_user(uid):
     '''pp估计计算'''
     try:
+        conn = get_conn()
+        cur = conn.cursor()
         pp,result = get_bp_and_pp(uid)
         if not pp:
             return 0,0,0
@@ -565,12 +591,13 @@ def check_user(uid):
             acc2 = acc + 0.2
             args = [r['beatmap_id'], r['enabled_mods'], acc1, acc2, maxcombo1, maxcombo2]
             # print(args)
-            cur = get_cursor()
             sql='''
                 SELECT avg(u.pp_raw),count(1) from osu_bp b INNER JOIN osu_user u on b.user_id=u.user_id where b.beatmap_id = %s and b.mods=%s and b.acc BETWEEN %s and %s and b.maxcombo BETWEEN %s and %s 
             '''
             cur.execute(sql, args)
             res = cur.fetchall()
+            
+            conn.close()
             res = res[0]
             if res[0] is None:
                 continue
@@ -589,6 +616,8 @@ def check_user(uid):
         return pp,yugu_pp,round(maxpp)
     except:
         traceback.print_exc()
+        
+        conn.close()
         return 0,0,0
 
 def get_user_and_bp(uid):
@@ -887,7 +916,8 @@ def health_check(uid):
 
 def get_card(username):
     try:
-        cur = get_cursor()
+        conn = get_conn()
+        cur = conn.cursor()
         sql = '''
             SELECT username,pp_raw,acc,pc FROM osu_user where username = %s
         '''
@@ -945,9 +975,12 @@ def get_card(username):
 
         card_hp = 200 + (max_attack - card_attack + max_defense - card_defense) * 8
         
+        conn.close()
+        
         return(username,card_level,round(card_attack),round(card_defense),round(card_hp))
     except:
         traceback.print_exc()
+        conn.close()
         return 0
 
 def get_card_msg(username):
@@ -964,7 +997,8 @@ def get_card_msg(username):
 def insertUser(info):
     '''插入'''
     try:
-        cur = get_cursor()
+        conn = get_conn()
+        cur = conn.cursor()
         sql = '''
             insert into osu_user
                 (user_id, username, tth, ranked_score, total_score, pp_rank, level, pp_raw, acc, country, pc) 
@@ -975,9 +1009,13 @@ def insertUser(info):
         args = [info.get('user_id'), info.get('username'), tth, info.get('ranked_score'), info.get('total_score'), info.get('pp_rank'), info.get('level'), info.get('pp_raw'), round(float(info.get('accuracy')),2), info.get('country'), info.get('playcount')]
         result = cur.execute(sql, args)
         conn.commit()
+        
+        conn.close()
         print('insert '+ info.get('user_id'))
     except:
         conn.rollback()
+        
+        conn.close()
         traceback.print_exc()
 
 def get_user_info(uid):
@@ -1046,18 +1084,22 @@ def osu_explain(bot, contact, member, content):
 def get_from_osu_user(username):
     '''查库'''
     try:
-        cur = get_cursor()
+        conn = get_conn()
+        cur = conn.cursor()
         sql = '''
             SELECT * FROM osu_user where username = %s
         '''
         cur.execute(sql, username)
         res = cur.fetchall()
+        
+        conn.close()
         print (res)
         if not res:
             return 0
         return  res[0]
     except:
         traceback.print_exc()
+        conn.close()
         return 0
 
 def get_help():
