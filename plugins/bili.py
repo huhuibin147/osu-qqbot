@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import time
+import traceback
 from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -19,7 +20,7 @@ class bili():
         # 隐式等待时间
         self.driver.implicitly_wait(10)
 
-    def getUrl(self, img='home.png', url='https://www.bilibili.com/'):
+    def getUrl(self, url='https://www.bilibili.com/'):
         # 滚动加载整个页面
         self.driver.get(url)
         self.driver.execute_script("""
@@ -47,8 +48,10 @@ class bili():
             if "scroll-done" in self.driver.title:
                 break
             time.sleep(10)
-        self.driver.save_screenshot(img)
         print('加载完毕!')
+
+    def screenshot(self, img='home.png'):
+        self.driver.save_screenshot(img)
 
     def stop(self):
         self.driver.quit()
@@ -93,11 +96,13 @@ class bili():
             bangumi_rank.append(bangumi)
         return bangumi_rank
 
-    def get_element_xy(self, element):
-        left = element.location['x']
-        top = element.location['y']
-        right = element.location['x'] + element.size['width']
-        bottom = element.location['y'] + element.size['height']
+    def get_element_xy(self, element, offset):
+        if not offset:
+            offset = (0,0,0,0)
+        left = element.location['x'] + offset[0]
+        top = element.location['y'] + offset[1]
+        right = element.location['x'] + element.size['width'] + offset[2]
+        bottom = element.location['y'] + element.size['height'] + offset[3]
         return left,top,right,bottom
 
     def cut_img(self, img='home.png', newimg='t.png', **kargs):
@@ -111,14 +116,29 @@ class bili():
         im = im.crop((left, top, right, bottom))
         im.save(newimg)
 
-
+    def get_time_bangumi(self, day):
+        '''1-昨天,2-今天,3-明天'''
+        try:
+            self.getUrl('https://bangumi.bilibili.com/anime/timeline')
+            self.screenshot('time_bangumi.png')
+            p = self.driver.find_element(By.XPATH, '/html/body/div[4]/div/div[2]/div[2]/div[%s]'%(day))
+            left,top,right,bottom = self.get_element_xy(p, (11,-60,25,10))
+            kwargs = {
+                'left' : left,
+                'top' : top,
+                'right' : right,
+                'bottom' : bottom
+            }
+            new_img = 'cut_bangumi_%s.png'%(day)
+            self.cut_img('time_bangumi.png', new_img, **kwargs)
+            return new_img
+        except:
+            traceback.print_exc()
 
 def test():
     # bi.getUrl(img='time_bangumi.png', url='https://bangumi.bilibili.com/anime/timeline')
     # p = self.driver.find_element(By.XPATH, '/html/body/div[4]/div/div[2]/div[2]/div[2]')
     # print(p.location['x'],p.location['y'],p.size['width'],p.size['height'])
-    
-    
     left = 376 #+11
     top = 271  #-60
     right = 690 #+25
@@ -130,10 +150,10 @@ def test():
 
 
 if __name__ == "__main__":
-    # bi = bili()
+    bi = bili()
+    bi.get_time_bangumi(2)
     # bi.getUrl()
     # # bi.get_bangumi()
     # # bi.get_bangumi_rank()
-    # bi.stop()
-    # bi.test()
-    test()
+    bi.stop()
+    # test()

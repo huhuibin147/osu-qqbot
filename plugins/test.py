@@ -266,13 +266,16 @@ def _method(bot, contact, member, content):
     elif '新番' == content:
         msg = get_bangumi(bot, contact, num = 3)
         bot.SendTo(contact, msg)
+        return
     elif '新番排行' == content:
         msg = get_bangumi_rank(bot, contact, num = 5)
         bot.SendTo(contact, msg)
+        return
     elif 'osu' == content:
         w = random.choice(list(word_list))
         msg = w + ':' + Config.osu_words[w]
         bot.SendTo(contact, msg)
+        return
     elif '!pk' in content:
         osuname2 = content[4:]
         res = get_osuinfo_byqq(member.qq)
@@ -307,7 +310,13 @@ def _method(bot, contact, member, content):
         bot.SendTo(contact, '插件热加载成功!')
         return
     elif '今日看番' == content:
-        post2site.post2site(r'C:\Users\monitor\.qqbot-tmp\plugins\t.png', contact.qq)
+        get_bangumi_timeline(bot, contact, 2)
+        return
+    elif '明日看番' == content:
+        get_bangumi_timeline(bot, contact, 3)
+        return
+    elif '昨日看番' == content:
+        get_bangumi_timeline(bot, contact, 1)
         return
 
 def pk_count(winer, loser):
@@ -1071,6 +1080,23 @@ def get_bangumi(bot, contact, num=''):
     msg = '\n'.join(bangumi)
     msg = 'inter推荐新番\n' + msg
     return msg
+
+def get_bangumi_timeline(bot, contact, day):
+    key = 'get_bangumi_timeline_%s'%(day)
+    res = redis_client.get(key)
+    if not res:
+        bot.SendTo(contact, 'inter忘记了,去B站看看,请骚等...')
+        bi = bili.bili()
+        bi.start()
+        img = bi.get_time_bangumi(day)
+        bi.stop()
+        #设置半天更新时间
+        redis_client.setex(key, img, 3600*1)
+    else:
+        bot.SendTo(contact, '召唤int...')
+        img = res
+    # post2site.post2site(r'C:\Users\monitor\.qqbot-tmp\plugins\%s'%(img), contact.qq)
+    post2site.post2site(r'C:\Users\hb\.qqbot-tmp\plugins\%s'%(img.decode()), contact.qq)
 
 word_list = Config.osu_words.keys()
 def osu_explain(bot, contact, member, content):
