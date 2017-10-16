@@ -441,6 +441,8 @@ def setid(qq, osuid, name, groupid, osuname):
 def get_osuid(osuname):
     '''抓osuid'''
     try:
+        conn = get_conn()
+        cur = conn.cursor()
         url = 'https://osu.ppy.sh/api/get_user?k=%s&u=%s' % (osu_api_key, osuname)
         res = get_url(url)
         while res == 0:
@@ -597,7 +599,6 @@ def check_user(uid):
             cur.execute(sql, args)
             res = cur.fetchall()
             
-            conn.close()
             res = res[0]
             if res[0] is None:
                 continue
@@ -613,6 +614,7 @@ def check_user(uid):
             yugu_pp = round(count_pp/count_num)
         if maxpp == 0:
             maxpp = float(pp)
+        conn.close()
         return pp,yugu_pp,round(maxpp)
     except:
         traceback.print_exc()
