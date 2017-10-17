@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import time
 import random
 import pymysql
@@ -318,6 +319,21 @@ def _method(bot, contact, member, content):
     elif '昨日看番' == content:
         get_bangumi_timeline(bot, contact, 1)
         return
+    # elif '!qx' == content:
+    #     uid = content[4:]
+    #     #取qq绑定
+    #     if not uid:
+    #         res = get_osuinfo_byqq(member.qq)
+    #         if not res:
+    #             bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+    #             return
+    #         uid = res[5]
+    #     get_osu_qx(bot, contact, uid)
+    #     return
+    # elif '!path' == content:
+    #     bot.SendTo(contact, os.getcwd())
+    #     return
+
 
 def pk_count(winer, loser):
     # 战绩统计
@@ -1082,21 +1098,45 @@ def get_bangumi(bot, contact, num=''):
     return msg
 
 def get_bangumi_timeline(bot, contact, day):
-    key = 'get_bangumi_timeline_%s'%(day)
-    res = redis_client.get(key)
-    if not res:
-        bot.SendTo(contact, 'inter忘记了,去B站看看,请骚等...')
-        bi = bili.bili()
-        bi.start()
-        img = bi.get_time_bangumi(day)
-        bi.stop()
-        #设置半天更新时间
-        redis_client.setex(key, img, 3600*1)
-    else:
-        bot.SendTo(contact, '召唤int...')
-        img = res
-    # post2site.post2site(r'C:\Users\monitor\.qqbot-tmp\plugins\%s'%(img), contact.qq)
-    post2site.post2site(r'C:\Users\hb\.qqbot-tmp\plugins\%s'%(img.decode()), contact.qq)
+    try:
+        key = 'get_bangumi_timeline_%s'%(day)
+        res = redis_client.get(key)
+        if not res:
+            bot.SendTo(contact, 'inter忘记了,去B站看看,请骚等...')
+            bi = bili.bili()
+            bi.start()
+            img = bi.get_time_bangumi(day)
+            bi.stop()
+            #设置半天更新时间
+            redis_client.setex(key, img, 3600*1)
+        else:
+            bot.SendTo(contact, '召唤int...')
+            img = res.decode()
+        post2site.post2site(img, contact.qq)
+    except:
+        redis_client.delete(key)
+        traceback.print_exc()
+
+def get_osu_qx(bot, contact, username):
+    try:
+        key = 'get_osu_qx_%s'%(username)
+        res = redis_client.get(key)
+        if not res:
+            bot.SendTo(contact, 'please wait...')
+            bi = bili.bili()
+            bi.start()
+            img = bi.get_osu_homepage(username)
+            bi.stop()
+            #设置半天更新时间
+            redis_client.setex(key, img, 3600*1)
+        else:
+            # bot.SendTo(contact, '召唤int...')
+            img = res.decode()
+        bot.SendTo(contact, "%s's rankline" % username)
+        post2site.post2site(img, contact.qq)
+    except:
+        redis_client.delete(key)
+        traceback.print_exc()
 
 word_list = Config.osu_words.keys()
 def osu_explain(bot, contact, member, content):

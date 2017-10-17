@@ -135,15 +135,37 @@ class bili():
         except:
             traceback.print_exc()
 
+    def get_osu_homepage(self, username):
+        '''1-昨天,2-今天,3-明天'''
+        try:
+            self.getUrl('https://osu.ppy.sh/users/%s' % username)
+            save_img = '%s_homepage.png' % username
+            self.screenshot(save_img)
+            p = self.driver.find_element(By.XPATH, '/html/body/div[9]/div/div/div[1]/div[2]/div[2]/div[3]')
+            left,top,right,bottom = self.get_element_xy(p, (0,0,20,0))
+            kwargs = {
+                'left' : left,
+                'top' : top,
+                'right' : right,
+                'bottom' : bottom
+            }
+            print(kwargs)
+            new_img = 'cut_%s_homepage.png' % username
+            self.cut_img(save_img, new_img, **kwargs)
+            return new_img
+        except:
+            traceback.print_exc()
+
 def test():
     # bi.getUrl(img='time_bangumi.png', url='https://bangumi.bilibili.com/anime/timeline')
     # p = self.driver.find_element(By.XPATH, '/html/body/div[4]/div/div[2]/div[2]/div[2]')
     # print(p.location['x'],p.location['y'],p.size['width'],p.size['height'])
-    left = 376 #+11
-    top = 271  #-60
-    right = 690 #+25
-    bottom = 617 #+10
-    im = Image.open('time_bangumi.png') 
+    left = 60 #+11
+    top = 802  #-60
+    right = 350 #+25
+    bottom = 957 #+10
+    # im = Image.open('time_bangumi.png') 
+    im = Image.open('-interesting-_homepage.png')
     im = im.crop((left, top, right, bottom))
     im.save('t.png')
     # bi.stop()
@@ -151,9 +173,12 @@ def test():
 
 if __name__ == "__main__":
     bi = bili()
-    bi.get_time_bangumi(2)
+    # bi.get_time_bangumi(2)
+    bi.get_osu_homepage('-inter-')
     # bi.getUrl()
     # # bi.get_bangumi()
     # # bi.get_bangumi_rank()
     bi.stop()
+
+
     # test()
