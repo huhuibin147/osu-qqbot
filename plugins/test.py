@@ -319,20 +319,20 @@ def _method(bot, contact, member, content):
     elif '昨日看番' == content:
         get_bangumi_timeline(bot, contact, 1)
         return
-    # elif '!qx' == content:
-    #     uid = content[4:]
-    #     #取qq绑定
-    #     if not uid:
-    #         res = get_osuinfo_byqq(member.qq)
-    #         if not res:
-    #             bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
-    #             return
-    #         uid = res[5]
-    #     get_osu_qx(bot, contact, uid)
-    #     return
-    # elif '!path' == content:
-    #     bot.SendTo(contact, os.getcwd())
-    #     return
+    elif '!qx' in content:
+        uid = content[4:]
+        #取qq绑定
+        if not uid:
+            res = get_osuinfo_byqq(member.qq)
+            if not res:
+                bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+                return
+            uid = res[5]
+        get_osu_qx(bot, contact, uid)
+        return
+    elif '!path' == content:
+        bot.SendTo(contact, os.getcwd())
+        return
 
 
 def pk_count(winer, loser):
@@ -1056,6 +1056,7 @@ def get_user_info(uid):
     return result[0]
 
 import bili
+import fire
 
 def get_bangumi_rank(bot, contact, num=''):
     key = 'get_bangumi_rank'
@@ -1063,7 +1064,7 @@ def get_bangumi_rank(bot, contact, num=''):
     if not res:
         bot.SendTo(contact, 'inter忘记了,去B站看看,请骚等...')
         bi = bili.bili()
-        bi.start()
+        # bi.start()
         bi.getUrl()
         bangumi = bi.get_bangumi_rank()
         bi.stop()
@@ -1083,7 +1084,7 @@ def get_bangumi(bot, contact, num=''):
     if not res:
         bot.SendTo(contact, 'inter忘记了,去B站看看,请骚等...')
         bi = bili.bili()
-        bi.start()
+        # bi.start()
         bi.getUrl()
         bangumi = bi.get_bangumi()
         bi.stop()
@@ -1104,7 +1105,7 @@ def get_bangumi_timeline(bot, contact, day):
         if not res:
             bot.SendTo(contact, 'inter忘记了,去B站看看,请骚等...')
             bi = bili.bili()
-            bi.start()
+            # bi.start()
             img = bi.get_time_bangumi(day)
             bi.stop()
             #设置半天更新时间
@@ -1119,22 +1120,32 @@ def get_bangumi_timeline(bot, contact, day):
 
 def get_osu_qx(bot, contact, username):
     try:
+        #限制时间访问
+        key_times = 'get_osu_qx'
+        res_times = redis_client.get(key_times)
+        if res_times:
+            bot.SendTo(contact, 'inter单线程中,骚后再试...')
+            return
+        else:
+            redis_client.setex(key_times,1,30)
         key = 'get_osu_qx_%s'%(username)
         res = redis_client.get(key)
         if not res:
             bot.SendTo(contact, 'please wait...')
-            bi = bili.bili()
-            bi.start()
-            img = bi.get_osu_homepage(username)
+            bi = fire.bili()
+            # bi.start()
+            img = bi.get_rank_chart(username)
             bi.stop()
             #设置半天更新时间
-            redis_client.setex(key, img, 3600*1)
+            redis_client.setex(key, img, 3600*6)
         else:
             # bot.SendTo(contact, '召唤int...')
             img = res.decode()
-        bot.SendTo(contact, "%s's rankline" % username)
+        bot.SendTo(contact, "%s's rankchart" % username)
         post2site.post2site(img, contact.qq)
+        redis_client.delete(key_times)
     except:
+        bi.stop()
         redis_client.delete(key)
         traceback.print_exc()
 
