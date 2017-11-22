@@ -25,16 +25,16 @@ rbq_list_614892339 = {}
 rbq_514661057 = set([])
 rbq_list_514661057 = {}
 testuser = []
-# if contact.qq != '614892339' and contact.qq != '514661057' and contact.qq != '598918097':
-#     return 
-# if len(rbq_614892339) > 20:
-#     rbq_614892339.pop()
-# rbq_614892339.add(member.name)
+msglist = []
+speak_flag = [1]
+
 others_github = 'https://github.com/pandolia/qqbot'
 aite = [
     '不想理你!','你是想被dalou打爆?','你想被日吗?','你想调戏我?',
     '再艾特我,叫dalou打你!','求求你，不要再艾特我了!','我要找幕后黑手烟你!',
-    'dalou还有幕后黑手!','有事请找幕后黑手inter!','我要日你!'
+    'dalou还有幕后黑手!','有事请找幕后黑手inter!','我要日你!','哪个刁民又在为难朕',
+    'dalou在隔壁一拳打过来，打穿你!','小心我让幕后黑手ban了你!','就这几句话还玩不够啊!',
+    '我要下线了!','mdzz','pass了再说https://osu.ppy.sh/s/332532'
     ]
 group_list = ['614892339','514661057','641236878']
 
@@ -65,9 +65,28 @@ def onQQMessage(bot, contact, member, content):
 
     
 def _method(bot, contact, member, content):
-    
+
+    # msg收集
+    if content and len(content) < 30:
+        if len(msglist) > 10000:
+            msglist.pop()
+        msglist.append(content)
+
+    # rbq列表收集
+    if len(rbq_614892339) > 50:
+        rbq_614892339.pop()
+    rbq_614892339.add(member.name)
+
+    # speak
+    if speak_flag[0] and member.qq != '1677323371' and random.randint(0,100) > 80:
+        msg = random.choice(msglist)
+        bot.SendTo(contact, msg)
+
     if '@ME' in content:
-        msg = random.choice(aite)
+        if random.randint(0,1):
+            msg = random.choice(msglist)
+        else:
+            msg = random.choice(aite)
         bot.SendTo(contact, msg)
         return
     # if content == '!help':
@@ -75,22 +94,35 @@ def _method(bot, contact, member, content):
     elif content == '!bq':
         bot.SendTo(contact, '/'+random.choice(qqbot.facemap.faceText))
         return
+    elif content == '!stopsp':
+        speak_flag[0] = 0
+    elif content == '!startsp':
+        speak_flag[0] = 1
     elif content == '!inter':
         msg = get_help()
         bot.SendTo(contact, msg)
         return
-    # elif content == '!rbq':
-    #     r = random.choice(list(rbq_614892339))
-    #     msg = '%s 获得了一个 %s 作为rbq' % (member.name, r)
-    #     if rbq_list_614892339.get(member.qq) is None:
-    #         rbq_list_614892339[member.qq] = set([r])
-    #     elif len(rbq_list_614892339[member.qq]) == 5:
-    #         rem_r = random.choice(list(rbq_list_614892339[member.qq]))
-    #         msg = 'rbq太多了,%s 已被抛弃!' % rem_r
-    #         rbq_list_614892339[member.qq].remove(rem_r)
-    #     else:
-    #         rbq_list_614892339[member.qq].add(r)                
-    #     bot.SendTo(contact, msg)
+    elif content == '!rbq':
+        # 控制频率
+        # key = 'get_rbq:%s' % member.qq
+        # value = redis_client.get(key)
+        # if not value:
+        #     redis_client.setex(key, 1, 60)
+        # else:
+        #     bot.SendTo(contact, '这1分钟你只能成为别人的rbq!!!')
+        #     return
+        # r = random.choice(list(rbq_614892339))
+        # msg = '%s 获得了一个 %s 作为rbq' % (member.name, r)
+        # if rbq_list_614892339.get(member.qq) is None:
+        #     rbq_list_614892339[member.qq] = set([r])
+        # elif len(rbq_list_614892339[member.qq]) == 5:
+        #     rem_r = random.choice(list(rbq_list_614892339[member.qq]))
+        #     msg = 'rbq太多了,%s 已被抛弃!' % rem_r
+        #     rbq_list_614892339[member.qq].remove(rem_r)
+        # else:
+        #     rbq_list_614892339[member.qq].add(r)                
+        # bot.SendTo(contact, msg)
+        bot.SendTo(contact, '被inter偷偷关了!')
     elif content == '!myrbq':
         if rbq_list_614892339.get(member.qq) is None or len(rbq_list_614892339.get(member.qq)) == 0:
             bot.SendTo(contact, '你没有rbq醒醒!')
@@ -327,17 +359,17 @@ def _method(bot, contact, member, content):
     elif '昨日看番' == content:
         get_bangumi_timeline(bot, contact, 1)
         return
-    elif '!qx' in content:
-        uid = content[4:]
-        #取qq绑定
-        if not uid:
-            res = get_osuinfo_byqq(member.qq)
-            if not res:
-                bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
-                return
-            uid = res[5]
-        get_osu_qx(bot, contact, uid)
-        return
+    # elif '!qx' in content:
+    #     uid = content[4:]
+    #     #取qq绑定
+    #     if not uid:
+    #         res = get_osuinfo_byqq(member.qq)
+    #         if not res:
+    #             bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+    #             return
+    #         uid = res[5]
+    #     get_osu_qx(bot, contact, uid)
+    #     return
     elif '!path' == content:
         bot.SendTo(contact, os.getcwd())
         return
