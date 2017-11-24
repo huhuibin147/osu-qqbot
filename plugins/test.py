@@ -25,7 +25,7 @@ rbq_list_614892339 = {}
 rbq_514661057 = set([])
 rbq_list_514661057 = {}
 testuser = []
-msglist = []
+msglist = set([])
 speak_flag = [1]
 
 others_github = 'https://github.com/pandolia/qqbot'
@@ -67,10 +67,10 @@ def onQQMessage(bot, contact, member, content):
 def _method(bot, contact, member, content):
 
     # msg收集
-    if content and len(content) < 30:
+    if content and len(content) < 30 and member.qq != '1677323371':
         if len(msglist) > 10000:
             msglist.pop()
-        msglist.append(content)
+        msglist.add(content)
 
     # rbq列表收集
     if len(rbq_614892339) > 50:
@@ -78,13 +78,13 @@ def _method(bot, contact, member, content):
     rbq_614892339.add(member.name)
 
     # speak
-    if speak_flag[0] and member.qq != '1677323371' and random.randint(0,100) > 80:
-        msg = random.choice(msglist)
-        bot.SendTo(contact, msg)
+    if speak_flag[0] and member.qq != '1677323371' and random.randint(0,100) > 95:
+        msg = random.sample(msglist,1)
+        bot.SendTo(contact, msg[0])
 
     if '@ME' in content:
         if random.randint(0,1):
-            msg = random.choice(msglist)
+            msg = random.sample(msglist,1)[0]
         else:
             msg = random.choice(aite)
         bot.SendTo(contact, msg)
@@ -96,8 +96,12 @@ def _method(bot, contact, member, content):
         return
     elif content == '!stopsp':
         speak_flag[0] = 0
+        bot.SendTo(contact, '啊啊啊被淹了!')
+        return
     elif content == '!startsp':
         speak_flag[0] = 1
+        bot.SendTo(contact, 'Bot我又回来了!')
+        return
     elif content == '!inter':
         msg = get_help()
         bot.SendTo(contact, msg)
