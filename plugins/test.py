@@ -27,6 +27,7 @@ rbq_list_514661057 = {}
 testuser = []
 msglist = set([])
 speak_flag = [1]
+worlds_num = [10000]
 
 others_github = 'https://github.com/pandolia/qqbot'
 aite = [
@@ -38,7 +39,15 @@ aite = [
     ]
 group_list = ['614892339','514661057','641236878']
 
+def onStartupComplete(bot):
+    # 启动完成时被调用
+    t_up_speak = threading.Thread(target=speak_task,args=())
+    t_up_speak.start()
 
+def onInterval(bot):
+    # 每隔 5 分钟被调用
+    t_up_speak = threading.Thread(target=speak_task,args=())
+    t_up_speak.start()
 
 def onQQMessage(bot, contact, member, content):
     #contact :  ctype/qq/uin/nick/mark/card/name 
@@ -68,7 +77,7 @@ def _method(bot, contact, member, content):
 
     # msg收集
     if content and len(content) < 30 and member.qq != '1677323371':
-        if len(msglist) > 10000:
+        if len(msglist) > worlds_num[0]:
             msglist.pop()
         msglist.add(content)
 
@@ -83,7 +92,7 @@ def _method(bot, contact, member, content):
         bot.SendTo(contact, msg[0])
 
     if '@ME' in content:
-        if random.randint(0,1):
+        if random.randint(0,5):
             msg = random.sample(msglist,1)[0]
         else:
             msg = random.choice(aite)
@@ -93,6 +102,17 @@ def _method(bot, contact, member, content):
     #     bot.SendTo(contact, 'dalou只会打爆你!')
     elif content == '!bq':
         bot.SendTo(contact, '/'+random.choice(qqbot.facemap.faceText))
+        return
+    elif content == '!cnt':
+        bot.SendTo(contact, 'interBot目前的词库量:%s,上限:%s' % (len(msglist), worlds_num[0]))
+        return
+    elif '!setcnt' in content and member.qq == '405622418':
+        if int(content[8:]) < len(msglist):
+            msg = '调整失败,上限小于当前词库量'
+        else:
+            worlds_num[0] = int(content[8:])
+            msg = 'interBot目前的词库量:%s,上限调整为:%s' % (len(msglist), worlds_num[0])
+        bot.SendTo(contact, msg)
         return
     elif content == '!stopsp':
         speak_flag[0] = 0
@@ -410,7 +430,7 @@ def pk_count(winer, loser):
 att_type = ['一脚踢爆了','单手打爆了','用脚打爆了','单戳解决了','acc碾压了','一串连打带走了','随手fc解决了','高速全屏跳带走了']
 
 
-#定时任务
+#定时任务1
 from qqbot import qqbotsched
 @qqbotsched(minute='0-59/1')
 def mytask(bot):
@@ -423,6 +443,33 @@ def mytask(bot):
                 msg = get_recent_plays(t)
                 if msg:
                     bot.SendTo(group, msg)
+
+
+def speak_task():
+    try:
+        conn = get_conn()
+        # cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur = conn.cursor()
+        sql = '''
+            SELECT content FROM chat_logs
+        '''
+        cur.execute(sql)
+        res = cur.fetchall()
+        if not res:
+            return 0
+        shuf_res = list(res)
+        random.shuffle(shuf_res)
+        limit_cnt = worlds_num[0]-2000
+        for r in shuf_res:
+            if len(msglist) > limit_cnt:
+                break 
+            if len(r[0]) < 30:
+                msglist.add(r[0])
+        print('词库自动更新,条数:%s' % len(msglist))
+        conn.close()
+    except:
+        traceback.print_exc()
+        conn.close()
 
 redis_client = redis.Redis(host='127.0.0.1', port=6379)
 def get_recent_plays(osuname):
