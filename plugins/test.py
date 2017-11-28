@@ -92,10 +92,7 @@ def _method(bot, contact, member, content):
         bot.SendTo(contact, msg[0])
 
     if '@ME' in content:
-        if random.randint(0,5):
-            msg = random.sample(msglist,1)[0]
-        else:
-            msg = random.choice(aite)
+        msg = random.sample(msglist,1)[0]
         bot.SendTo(contact, msg)
         return
     # if content == '!help':
@@ -357,6 +354,46 @@ def _method(bot, contact, member, content):
                 pk_count(osuname2, osuname)
             bot.SendTo(contact, msg)
             return
+    elif '!zj' == content:
+        res = get_osuinfo_byqq(member.qq)
+        if not res:
+            bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
+            return
+        uid = res[5]
+        rec = get_pk_count(uid)
+        if rec == -1:
+            msg = '战绩系统被玩坏了!!!'
+        else:
+            rate = round((rec[0]/(rec[0]+rec[1])*100),2)
+            msg = "%s's 战绩\n胜:%s\n负:%s\n胜率:%s%%" % (uid, rec[0], rec[1], rate)
+        bot.SendTo(contact, msg)
+        return
+    elif '!win' == content:
+        ranklist = get_pk_rank(type=1)
+        print (ranklist)
+        if ranklist == -1:
+            msg = '战绩系统被玩坏了!!!'
+        elif len(ranklist) == 0: 
+            msg = '战绩旁空空,你们快打一架!'
+        else:
+            msg = 'winner榜\n'
+            for i,r in enumerate(ranklist):
+                msg += '%s.%s  %s胜\n' % (i+1, r[0], r[1][0])
+        bot.SendTo(contact, msg[:-1])
+        return
+    elif '!lose' == content:
+        ranklist = get_pk_rank(type=2)
+        print (ranklist)
+        if ranklist == -1:
+            msg = '战绩系统被玩坏了!!!'
+        elif len(ranklist) == 0: 
+            msg = '战绩旁空空,你们快打一架!'
+        else:
+            msg = 'loser榜\n'
+            for i,r in enumerate(ranklist):
+                msg += '%s.%s  %s败\n' % (i+1, r[0], r[1][1])
+        bot.SendTo(contact, msg[:-1])
+        return
     elif '!restart' == content and member.qq == '405622418':
         os.system('qq restart')
         bot.SendTo(contact, 'inter5秒后重启...')
@@ -420,12 +457,47 @@ def pk_count(winer, loser):
         else:
             pk_rec[loser]=[0,1]
 
-        print (pk_rec)
+        # print (pk_rec)
         
         redis_client.setex(key, json.dumps(pk_rec), 3600*60)
     except:
         traceback.print_exc()
 
+def get_pk_count(user):
+    # 战绩查询
+    try:
+        key = 'pk_rec'
+        pk_rec = redis_client.get(key)
+        if not pk_rec:
+            pk_rec = {}
+        else:
+            pk_rec = json.loads(pk_rec)
+        user_rec = pk_rec.get(user, [0,0])
+        return user_rec
+    except:
+        traceback.print_exc()
+        return -1
+
+def get_pk_rank(type=1, num=5):
+    # 战绩排行查询  1-win 2-lose
+    try:
+        key = 'pk_rec'
+        ranklist = []
+        pk_rec = redis_client.get(key)
+        if not pk_rec:
+            pk_rec = []
+        else:
+            pk_rec = json.loads(pk_rec)
+        if type == 1:
+            sort_pk = sorted(pk_rec.items(), key=lambda d:d[1][0], reverse=True)
+        elif type == 2:
+            sort_pk = sorted(pk_rec.items(), key=lambda d:d[1][1], reverse=True)
+        for i in range(num):
+            ranklist.append(sort_pk[i])
+        return ranklist
+    except:
+        traceback.print_exc()
+        return -1
 
 att_type = ['一脚踢爆了','单手打爆了','用脚打爆了','单戳解决了','acc碾压了','一串连打带走了','随手fc解决了','高速全屏跳带走了']
 
@@ -1283,7 +1355,7 @@ def get_from_osu_user(username):
 
 def get_help():
     '''帮助'''
-    msg = '''interBot v1.3(多线程版本)
+    msg = '''interBot v1.4(话痨版本)
 1.rbq(不知道为什么被关了)
 2.myrbq
 3.setid xxx(请绑定)
@@ -1293,16 +1365,17 @@ def get_help():
 7.check xxx(inter随机乱算的)
 8.js 奸视列表
 9.test 健康指数(dalou公式)
-10.bbp
-11.sp
-12.skill
-13.vssk
+10.bbp 用来秀bp?
+11.sp 新人群专属番
+12.skill 
+13.vssk +osuid 对比 
 14.upage xx,2
 15.map 低端推荐pp图
 16.card 卡牌
-17.新番/新番排行(new)
-18.osu 名词解释(new)
-19.接受功能建议'''
+17.新番/新番排行(暂时用不了)
+18.osu 名词解释
+19.!s(stats的回归,绑定id限定)
+20.pk/zj/win/lose 壳子系列'''
     return msg
 
 # 解锁8号彩蛋 1061566571
