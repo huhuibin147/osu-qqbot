@@ -27,9 +27,21 @@ def onQQMessage(bot, contact, member, content):
 
 def _method(bot, contact, member, content):
 
-    if content == '!s':
+    if '!s' == content:
         msg = get_stats(member.qq)
         bot.SendTo(contact, msg)
+        return
+    elif '!days' in content:
+        try:
+            days = content.split(' ')
+            if len(days) > 1:
+                days = int(days[1])
+            else:
+                days = 0
+            msg = get_stats(member.qq, days)
+            bot.SendTo(contact, msg)
+        except:
+            bot.SendTo(contact, '请好好输参数...(!days 2)')
         return
     elif content == '!status':
         update_status(bot, contact, member, content)
@@ -43,12 +55,12 @@ def sched_day_insert():
         print('定时任务出错')
         traceback.print_exc()
 
-def get_stats(qq):
+def get_stats(qq, days=0):
     o = osu()
     res = o.get_myinfo(qq)
     if not res:
         return '未绑定,请使用setid!'
-    return o.osu_stats(res[5])
+    return o.osu_stats(res[5], days)
 
 def update_status(bot, contact, member, content):
     o = osu()
@@ -178,15 +190,17 @@ class osu:
             self.con.rollback()
             pass
 
-    def get_user_fromDB(self,username,**kwargs):
+    def get_user_fromDB(self,username,days=0):
         cur = self.get_cursor()
-        if not kwargs:
+        if not days:
             if self.is_today():
                 time = self.get_today()
             else:
                 time = self.get_yes()
-            sql = 'select * from user2 where username=%s and time>=%s limit 1'
-            print('查询时间:'+time)
+        else:
+            time = self.get_daystime(days)
+        sql = 'select * from user2 where username=%s and time>=%s limit 1'
+        print('查询时间:'+time)
         result = cur.execute(sql,(username,time))
         print('查询数据结果:'+str(result))
         if result:
@@ -222,7 +236,7 @@ class osu:
         user_list = cur.fetchall()
         return user_list
 
-    def osu_stats(self,uid):
+    def osu_stats(self,uid,days=0):
         try:
             print('查询用户:'+uid)
             res = requests.get('https://osu.ppy.sh/api/get_user?k=%s&u=%s'%(self.osu_api_key,str(uid)),headers=self.headers,timeout=5)
@@ -247,7 +261,7 @@ class osu:
             tth = eval(count300)+eval(count50)+eval(count100)
             tth_w = str(tth//10000)
             #与本地数据比较
-            u_db_info = self.get_user_fromDB(uid)
+            u_db_info = self.get_user_fromDB(uid, days)
             if u_db_info:
                 info = u_db_info[0]
                 add_pp = str(round(in_pp - float(info[2]),2))
@@ -263,9 +277,10 @@ class osu:
                     add_acc = str(add_acc)
                 add_pc = str(int(pc) - int(info[4]))
                 add_tth = str(tth - int(info[6]))
-                d = username+'\n'+pp+'pp(+'+add_pp+')\n'+'rank: '+rank+'('+add_rank+')\n'+'acc : '+acc+'%('+add_acc+')\n'+'pc  : '+pc+'pc(+'+add_pc+')\n'+'tth  : '+tth_w+'w(+'+add_tth+')'
+                times = info[7].strftime('%Y-%m-%d')
+                d = username+'\n'+pp+'pp(+'+add_pp+')\n'+'rank: '+rank+'('+add_rank+')\n'+'acc : '+acc+'%('+add_acc+')\n'+'pc  : '+pc+'pc(+'+add_pc+')\n'+'tth  : '+tth_w+'w(+'+add_tth+')\n'+times
             else:
-                d = username+'\n'+pp+'pp(+0)\n'+'rank: '+rank+'(+0)\n'+'acc : '+acc+'%(+0)\n'+'pc  : '+pc+'pc(+0)\n'+'tth  : '+tth_w+'w(+0)'
+                d = username+'\n'+pp+'pp(+0)\n'+'rank: '+rank+'(+0)\n'+'acc : '+acc+'%(+0)\n'+'pc  : '+pc+'pc(+0)\n'+'tth  : '+tth_w+'w(+0)\n'+str(datetime.date.today())
             #in_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
             is_exist = self.exist_user(uid)
             if not is_exist:
@@ -289,12 +304,6 @@ class osu:
             res = ''
         return res
 
-
-    def get_today(self):
-        today = datetime.date.today()
-        return str(today)+' 9:00:00'
-
-
     def get_today(self):
         today = datetime.date.today()
         return str(today)+' 9:00:00'
@@ -302,6 +311,11 @@ class osu:
     def get_yes(self):
         now = datetime.datetime.now()
         date = now - datetime.timedelta(days = 1)
+        return date.strftime('%Y-%m-%d')+' 9:00:00'
+
+    def get_daystime(self, days):
+        now = datetime.datetime.now()
+        date = now - datetime.timedelta(days = days)
         return date.strftime('%Y-%m-%d')+' 9:00:00'
 
     def is_today(self):

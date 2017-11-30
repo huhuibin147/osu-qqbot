@@ -87,8 +87,9 @@ def _method(bot, contact, member, content):
     rbq_614892339.add(member.name)
 
     # speak
-    if speak_flag[0] and member.qq != '1677323371' and random.randint(0,100) > 95:
+    if speak_flag[0] and member.qq != '1677323371' and random.randint(0,100) > 97:
         msg = random.sample(msglist,1)
+        print('回复speak触发!')
         bot.SendTo(contact, msg[0])
 
     if '@ME' in content:
@@ -502,7 +503,7 @@ def get_pk_rank(type=1, num=5):
 att_type = ['一脚踢爆了','单手打爆了','用脚打爆了','单戳解决了','acc碾压了','一串连打带走了','随手fc解决了','高速全屏跳带走了']
 
 
-#定时任务1
+#定时任务-监视任务
 from qqbot import qqbotsched
 @qqbotsched(minute='0-59/1')
 def mytask(bot):
@@ -515,6 +516,32 @@ def mytask(bot):
                 msg = get_recent_plays(t)
                 if msg:
                     bot.SendTo(group, msg)
+
+
+#定时任务-讲话任务
+from qqbot import qqbotsched
+@qqbotsched(second='0-59/5')
+def speaktask(bot):
+    groupid = random.choice(['614892339','514661057'])
+    gl = bot.List('group', groupid)
+    if gl is not None:
+        for group in gl:
+            if speak_flag[0] and random.randint(0,100) > 95 and speak_level_check(groupid):
+                msg = random.sample(msglist,1)
+                print('speak任务触发!')
+                bot.SendTo(group, msg[0])
+
+def speak_level_check(groupid):
+    try:
+        key = 'chatlog_%s' % groupid
+        chatlog = redis_client.get(key)
+        chatlog = json.loads(chatlog) if chatlog else [0]
+        if int(chatlog[0].get('qq',0)) == 1677323371:
+            return 0
+        else:
+            return 1
+    except:
+        traceback.print_exc()
 
 
 def speak_task():
@@ -531,7 +558,8 @@ def speak_task():
             return 0
         shuf_res = list(res)
         random.shuffle(shuf_res)
-        limit_cnt = worlds_num[0]-2000
+        limit_cnt = worlds_num[0]-500
+        msglist = set([])
         for r in shuf_res:
             if len(msglist) > limit_cnt:
                 break 
@@ -1374,8 +1402,9 @@ def get_help():
 16.card 卡牌
 17.新番/新番排行(暂时用不了)
 18.osu 名词解释
-19.!s(stats的回归,绑定id限定)
-20.pk/zj/win/lose 壳子系列'''
+19.s(stats的回归,绑定id限定)
+20.days 2 跨天数增长
+21.pk/zj/win/lose 壳子系列'''
     return msg
 
 # 解锁8号彩蛋 1061566571

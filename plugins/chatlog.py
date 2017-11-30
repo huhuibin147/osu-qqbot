@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import json
+import redis
 import pymysql  
 import datetime
-
+import traceback
 
 def onQQMessage(bot, contact, member, content):
     # 当收到 QQ 消息时被调用
@@ -11,6 +13,7 @@ def onQQMessage(bot, contact, member, content):
     # content : str 对象，消息内容
     if contact.ctype == 'group' and len(content)>0:
         insertChatContent(bot,contact,member,content)
+        insertRedis(bot,contact,member,content)
 
 
 def insertChatContent(bot,contact,member,content):
@@ -37,7 +40,22 @@ def insertChatContent(bot,contact,member,content):
         args = [contact.qq, member.qq, content]
         cursor.execute(sql, args)  
         connect.commit()  
-        print('insert success', cursor.rowcount, ' record')
+        # print('insert success', cursor.rowcount, ' record')
     except:
         print('insert fail')
         connect.rollback()
+
+def insertRedis(bot,contact,member,content):
+    try:
+        rds = redis.Redis(host='127.0.0.1', port=6379)
+        key = 'chatlog_%s' % contact.qq
+        chatlog = rds.get(key)
+        chatlog = json.loads(chatlog) if chatlog else []
+        chat_msg = {'qq':member.qq, 'content':content, 'time':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        chatlog.insert(0, chat_msg)
+        if len(chatlog) > 50:
+            chatlog.pop()
+        rds.set(key, json.dumps(chatlog))
+    except:
+        traceback.print_exc()
+
