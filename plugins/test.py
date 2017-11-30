@@ -559,7 +559,8 @@ def speak_task():
         shuf_res = list(res)
         random.shuffle(shuf_res)
         limit_cnt = worlds_num[0]-500
-        msglist = set([])
+        for i in range(len(msglist)):
+            msglist.pop()
         for r in shuf_res:
             if len(msglist) > limit_cnt:
                 break 
