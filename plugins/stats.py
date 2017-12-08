@@ -64,10 +64,13 @@ def get_stats(qq, days=0):
 
 def update_status(bot, contact, member, content):
     o = osu()
+    # 今日更新数量
     uplist = o.today_updates()
-    bindlist = o.get_user_list_fromDB()
-    uplist_new = data_format(uplist)
-    bindlist_new = data_format(bindlist)
+    # 绑定用户数量
+    bindlist = o.get_osuid_list_fromDB()
+    # 调整为osuid
+    uplist_new = uplist
+    bindlist_new = bindlist
     len_up = len(set(uplist))
     len_bind = len(set(bindlist))
     auto_flag = 0
@@ -91,11 +94,12 @@ def update_status(bot, contact, member, content):
         error_user = list(error_user)
         o._inerts_many(error_user)
         bot.SendTo(contact, '自动插入完成!')
+        print('***********待清理列表:%s**********'%error_user)
         # 自动清理
-        if o.del_users(error_user):
-            bot.SendTo(contact, '如下列表用户被自动清理:%s'%error_user)
-        else:
-            bot.SendTo(contact, '自动清理异常!')
+        # if o.del_users(error_user):
+        #     bot.SendTo(contact, '如下列表用户被自动清理:%s'%error_user)
+        # else:
+        #     bot.SendTo(contact, '自动清理异常!')
 
     return
 
@@ -150,7 +154,7 @@ class osu:
         '''今日更新数据'''
         cur = self.get_cursor()
         sql = '''
-            SELECT username FROM user2 where time=%s
+            SELECT osuid FROM user2 where time=%s
         '''
         today = self.get_today()
         cur.execute(sql, today)
@@ -182,7 +186,7 @@ class osu:
     def insert_user(self,*user):
         try:
             cur = self.get_cursor()
-            sql = 'insert into user2(username,pp,acc,pc,rank,tth,time) values(%s,%s,%s,%s,%s,%s,%s)'
+            sql = 'insert into user2(username,pp,acc,pc,rank,tth,time,osuid) values(%s,%s,%s,%s,%s,%s,%s,%s)'
             result = cur.execute(sql,tuple(user))
             print('插入数据结果:'+str(result))
             self.con.commit()
@@ -220,6 +224,16 @@ class osu:
         return  ret
         return user_list
 
+    def get_osuid_list_fromDB(self):
+        print('查询用户列表..')
+        cur = self.get_cursor()
+        sql = 'SELECT osuid from user GROUP BY osuid'
+        result = cur.execute(sql)
+        user_list = cur.fetchall()
+        ret = [r[0] for r in user_list]
+        return  ret
+        return user_list
+
     def exist_user(self,uid):
         #print('查询用户是否存在')
         cur = self.get_cursor()
@@ -247,6 +261,7 @@ class osu:
             #print(result)
             result = result[0]
             username = result['username']
+            osuid = result['osuid']
             pp = result['pp_raw']
             in_pp = float(pp)
             #print(in_pp)
@@ -290,7 +305,7 @@ class osu:
                     in_time = self.get_today()
                 else:
                     in_time = self.get_yes()
-                self.insert_user(username,in_pp,acc1,pc,rank,tth,in_time)
+                self.insert_user(username,in_pp,acc1,pc,rank,tth,in_time,osuid)
             return d
         except:
             traceback.print_exc()
@@ -360,6 +375,7 @@ class osu:
                 else:
                     continue
                 username = result['username']
+                osuid = result['osuid']
                 pp = result['pp_raw']
                 in_pp = float(pp)
                 rank = result['pp_rank']
@@ -369,7 +385,7 @@ class osu:
                 count100 = result['count100']
                 count50 = result['count50']
                 tth = eval(count300)+eval(count50)+eval(count100)
-                self.insert_user(username,in_pp,acc1,pc,rank,tth,in_time)
+                self.insert_user(username,in_pp,acc1,pc,rank,tth,in_time,osuid)
                 print(uid+'插入成功')
         except:
             print('auto_inert错误')
@@ -404,3 +420,24 @@ class osu:
             #self.insert_forday()
             print('定时任务结束')
 
+    ###############数据库扩展方法#################
+    def up(self):
+        uplist = []
+        for username in uplist:
+            cur = self.get_cursor()
+            print('查询用户:'+username)
+            res = requests.get('https://osu.ppy.sh/api/get_user?k=%s&u=%s'%(self.osu_api_key,username),headers=self.headers,timeout=5)
+
+            result = json.loads(res.text)
+            if not result:
+                print ('%s查询失败'%username)
+                continue
+            result = result[0]
+            user_id = result['user_id']
+            sql = '''
+                UPDATE user2 set osuid = %s where username = %s
+            '''
+            ret = cur.execute(sql, [user_id, username])
+            print (ret)
+            self.con.commit()
+    ###############数据库扩展方法#################

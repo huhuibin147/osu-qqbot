@@ -191,13 +191,13 @@ def _method(bot, contact, member, content):
         msg = "%s\nosu:%s\nosuid:%s\n%s" % (name, res[5], res[3], home_url)
         bot.SendTo(contact, msg)
         return
-    elif '!set' in content and member.qq == '405622418':
+    elif '!setjs' in content and member.qq == '405622418':
         name = content.split(' ')[1]
         if name not in testuser:
             testuser.append(name)
         bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
         return
-    elif '!rem' in content and member.qq == '405622418':
+    elif '!remjs' in content and member.qq == '405622418':
         name = content.split(' ')[1]
         if name in testuser:
             testuser.remove(name)
@@ -518,11 +518,11 @@ def mytask(bot):
                     bot.SendTo(group, msg)
 
 
-#定时任务-讲话任务
+#定时任务-讲话任务1
 from qqbot import qqbotsched
-@qqbotsched(second='0-59/5')
+@qqbotsched(second='0-59/15')
 def speaktask(bot):
-    groupid = random.choice(['614892339','514661057'])
+    groupid = '614892339'
     gl = bot.List('group', groupid)
     if gl is not None:
         for group in gl:
@@ -531,6 +531,19 @@ def speaktask(bot):
                 print('speak任务触发!')
                 bot.SendTo(group, msg[0])
 
+#定时任务-讲话任务2
+from qqbot import qqbotsched
+@qqbotsched(second='0-59/15')
+def speaktask2(bot):
+    groupid = '514661057'
+    gl = bot.List('group', groupid)
+    if gl is not None:
+        for group in gl:
+            if speak_flag[0] and random.randint(0,100) > 95 and speak_level_check(groupid):
+                msg = random.sample(msglist,1)
+                print('speak任务触发!')
+                bot.SendTo(group, msg[0])
+                
 def speak_level_check(groupid):
     try:
         key = 'chatlog_%s' % groupid
