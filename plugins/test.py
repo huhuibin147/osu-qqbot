@@ -409,7 +409,7 @@ def _method(bot, contact, member, content):
         try:
             key = content[4:]
             segmodel = methods['segmodel']
-            res = segmodel.most_similar(key,topn=5)
+            res = segmodel.most_similar(key,topn=10)
             msg = "%s's 相关词\n" % key
             for idx,item in enumerate(res):
                 msg += '%s.%s\n' % (idx+1, item[0])
@@ -614,6 +614,7 @@ def chat_train():
         try:
             if redis_client.exists(key):
                 print('跳过训练！')
+                load_seg_model()
                 return
             redis_client.setex(key, 1, 3600)
         except:
@@ -629,8 +630,15 @@ def chat_train():
         # train
         seg_train.run()
         print('训练完成！')
+        load_seg_model()
+    except:
+        traceback.print_exc()
+
+def load_seg_model():
+    try:
         model = models.Word2Vec.load('.qqbot-tmp\plugins\cbot\chat250.model.bin')
         methods.update({'segmodel':model})
+        print('模型载入成功！')
     except:
         traceback.print_exc()
 
@@ -1468,7 +1476,8 @@ def get_help():
 18.osu 名词解释
 19.s(stats的回归,绑定id限定)
 20.days 2 跨天数增长
-21.pk/zj/win/lose 壳子系列'''
+21. pk/zj/win/lose 壳子系列
+22. kw word 词关联(new)'''
     return msg
 
 # 解锁8号彩蛋 1061566571
