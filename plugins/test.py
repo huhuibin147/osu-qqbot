@@ -417,6 +417,15 @@ def _method(bot, contact, member, content):
         except:
             bot.SendTo(contact, '%s不在interbot的词汇表中' % key)
         return
+    elif '!trainwords' == content and member.qq == '405622418':
+        try:
+            bot.SendTo(contact, '啊啊啊!interbot被抓去训练了!')
+            chat_train(check_rds=True)
+            bot.SendTo(contact, 'interbot感觉还行,训练归来!')
+        except:
+            traceback.print_exc()
+            bot.SendTo(contact, 'interbot感觉不对劲,训练异常!')
+        return
 
     elif '!restart' == content and member.qq == '405622418':
         os.system('qq restart')
@@ -608,17 +617,18 @@ def speak_task():
         traceback.print_exc()
         conn.close()
 
-def chat_train():
+def chat_train(check_rds=False):
     try:
-        key = 'words_train'
-        try:
-            if redis_client.exists(key):
-                print('跳过训练！')
-                load_seg_model()
-                return
-            redis_client.setex(key, 1, 3600)
-        except:
-            traceback.print_exc()
+        if not check_rds:
+            key = 'words_train'
+            try:
+                if redis_client.exists(key):
+                    print('跳过训练！')
+                    load_seg_model()
+                    return
+                redis_client.setex(key, 1, 3600)
+            except:
+                traceback.print_exc()
         # 处理chatlog
         o = get_chatlog.osu()
         chatlist = o.get_chatlog()
@@ -636,7 +646,7 @@ def chat_train():
 
 def load_seg_model():
     try:
-        model = models.Word2Vec.load('.qqbot-tmp\plugins\cbot\chat250.model.bin')
+        model = models.Word2Vec.load('.qqbot-tmp\plugins\cbot\chat500.model.bin')
         methods.update({'segmodel':model})
         print('模型载入成功！')
     except:
