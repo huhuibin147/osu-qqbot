@@ -20,6 +20,12 @@ import Config
 import post2site
 import qqbot.facemap
 
+from cbot import get_chatlog
+from cbot import seg_train
+from cbot import segment
+from gensim.models import word2vec
+from gensim import models
+
 rbq_614892339 = set([])
 rbq_list_614892339 = {}            
 rbq_514661057 = set([])
@@ -28,6 +34,7 @@ testuser = []
 msglist = set([])
 speak_flag = [1]
 worlds_num = [10000]
+methods = {}
 
 others_github = 'https://github.com/pandolia/qqbot'
 aite = [
@@ -43,6 +50,9 @@ def onStartupComplete(bot):
     # 启动完成时被调用
     t_up_speak = threading.Thread(target=speak_task,args=())
     t_up_speak.start()
+    t_train = threading.Thread(target=chat_train,args=())
+    t_train.start()
+
 
 def onInterval(bot):
     # 每隔 5 分钟被调用
@@ -87,7 +97,7 @@ def _method(bot, contact, member, content):
     rbq_614892339.add(member.name)
 
     # speak
-    if speak_flag[0] and member.qq != '1677323371' and random.randint(0,100) > 97:
+    if speak_flag[0] and member.qq != '1677323371' and random.randint(0,100) > 99:
         msg = random.sample(msglist,1)
         print('回复speak触发!')
         bot.SendTo(contact, msg[0])
@@ -395,6 +405,19 @@ def _method(bot, contact, member, content):
                 msg += '%s.%s  %s败\n' % (i+1, r[0], r[1][1])
         bot.SendTo(contact, msg[:-1])
         return
+    elif '!kw' in content:
+        try:
+            key = content[4:]
+            segmodel = methods['segmodel']
+            res = segmodel.most_similar(key,topn=5)
+            msg = "%s's 相关词\n" % key
+            for idx,item in enumerate(res):
+                msg += '%s.%s\n' % (idx+1, item[0])
+            bot.SendTo(contact, msg[:-1])
+        except:
+            bot.SendTo(contact, '%s不在interbot的词汇表中' % key)
+        return
+
     elif '!restart' == content and member.qq == '405622418':
         os.system('qq restart')
         bot.SendTo(contact, 'inter5秒后重启...')
@@ -526,7 +549,7 @@ def speaktask(bot):
     gl = bot.List('group', groupid)
     if gl is not None:
         for group in gl:
-            if speak_flag[0] and random.randint(0,100) > 95 and speak_level_check(groupid):
+            if speak_flag[0] and random.randint(0,100) > 97 and speak_level_check(groupid):
                 msg = random.sample(msglist,1)
                 print('speak任务触发!')
                 bot.SendTo(group, msg[0])
@@ -539,7 +562,7 @@ def speaktask2(bot):
     gl = bot.List('group', groupid)
     if gl is not None:
         for group in gl:
-            if speak_flag[0] and random.randint(0,100) > 95 and speak_level_check(groupid):
+            if speak_flag[0] and random.randint(0,100) > 97 and speak_level_check(groupid):
                 msg = random.sample(msglist,1)
                 print('speak任务触发!')
                 bot.SendTo(group, msg[0])
@@ -584,6 +607,33 @@ def speak_task():
     except:
         traceback.print_exc()
         conn.close()
+
+def chat_train():
+    try:
+        key = 'words_train'
+        try:
+            if redis_client.exists(key):
+                print('跳过训练！')
+                return
+            redis_client.setex(key, 1, 3600)
+        except:
+            traceback.print_exc()
+        # 处理chatlog
+        o = get_chatlog.osu()
+        chatlist = o.get_chatlog()
+        get_chatlog.chat2txt(chatlist)
+        print('chatlog写入成功！')
+        # 切词
+        segment.run()
+        print('切词完成！')
+        # train
+        seg_train.run()
+        print('训练完成！')
+        model = models.Word2Vec.load('.qqbot-tmp\plugins\cbot\chat250.model.bin')
+        methods.update({'segmodel':model})
+    except:
+        traceback.print_exc()
+
 
 redis_client = redis.Redis(host='127.0.0.1', port=6379)
 def get_recent_plays(osuname):
