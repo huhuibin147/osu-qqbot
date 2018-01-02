@@ -41,7 +41,7 @@ def chat2txt(chatlist):
 def check_content(content):
     filters = ['!', '！', '~', '～', '个人信息', 'BP指标', '目前潜力', 'Beatmap by', '[@M', 'inter去ppy', 'inter忘',\
         'inter推荐给', '目前的词库量', 's 战绩', '星级:', 'winner榜' , 'loser榜', 'Stamina :', '[视频]', '今日更新的bp',\
-        '更新了bp', 'rank:' ,'s skill']
+        '更新了bp', 'rank:' ,'s skill', '相关词']
     for f in filters:
         if f in content:
             return False

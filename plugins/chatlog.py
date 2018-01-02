@@ -5,6 +5,8 @@ import pymysql
 import datetime
 import traceback
 
+from comm import intmysql
+
 def onQQMessage(bot, contact, member, content):
     # 当收到 QQ 消息时被调用
     # bot     : QQBot 对象，提供 List/SendTo/GroupXXX/Stop/Restart 等接口，详见文档第五节
@@ -19,17 +21,7 @@ def onQQMessage(bot, contact, member, content):
 def insertChatContent(bot,contact,member,content):
     # 连接数据库  
     try:
-        connect = pymysql.Connect(  
-            host='localhost',  
-            port=3306,  
-            user='root',  
-            passwd='123456',  
-            db='osu',  
-            charset='utf8'  
-        )  
-
-        # 获取游标  
-        cursor = connect.cursor()  
+        conn = intmysql.Connect()
         now = datetime.datetime.now()
         createtime=now.strftime('%Y-%m-%d %H:%M:%S')  
         # 插入数据  
@@ -38,12 +30,11 @@ def insertChatContent(bot,contact,member,content):
             VALUES ( %s, %s, %s, now())
         ''' 
         args = [contact.qq, member.qq, content]
-        cursor.execute(sql, args)  
-        connect.commit()  
-        # print('insert success', cursor.rowcount, ' record')
+        conn.execute(sql, args)  
+        conn.commit() 
     except:
         print('insert fail')
-        connect.rollback()
+        conn.rollback()
 
 def insertRedis(bot,contact,member,content):
     try:

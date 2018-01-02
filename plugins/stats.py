@@ -261,7 +261,7 @@ class osu:
             #print(result)
             result = result[0]
             username = result['username']
-            osuid = result['osuid']
+            osuid = result['user_id']
             pp = result['pp_raw']
             in_pp = float(pp)
             #print(in_pp)
@@ -298,14 +298,14 @@ class osu:
                 d = username+'\n'+pp+'pp(+0)\n'+'rank: '+rank+'(+0)\n'+'acc : '+acc+'%(+0)\n'+'pc  : '+pc+'pc(+0)\n'+'tth  : '+tth_w+'w(+0)\n'+str(datetime.date.today())
             #in_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
             is_exist = self.exist_user(uid)
-            if not is_exist:
-                print('用户不存在,进行插入')
-                #检测时间段0-9点
-                if self.is_today():
-                    in_time = self.get_today()
-                else:
-                    in_time = self.get_yes()
-                self.insert_user(username,in_pp,acc1,pc,rank,tth,in_time,osuid)
+            # if not is_exist:
+            #     print('用户不存在,进行插入')
+            #     #检测时间段0-9点
+            #     if self.is_today():
+            #         in_time = self.get_today()
+            #     else:
+            #         in_time = self.get_yes()
+            #     self.insert_user(username,in_pp,acc1,pc,rank,tth,in_time,osuid)
             return d
         except:
             traceback.print_exc()
@@ -358,35 +358,39 @@ class osu:
             today = datetime.date.today()
             in_time = str(today)+' 9:00:00'
             for uid in userlist:
-                res = self.getU(uid)
-                get_num = 0
-                while not res:
-                    if get_num < 5:
-                        get_num += 1
-                        res = self.getU(uid)
-                    else:
-                        break 
-                if not res:
-                    continue
+                try:
+                    res = self.getU(uid)
+                    get_num = 0
+                    while not res:
+                        if get_num < 5:
+                            get_num += 1
+                            res = self.getU(uid)
+                        else:
+                            break 
+                    if not res:
+                        continue
 
-                result = json.loads(res.text)  
-                if result:         
-                    result = result[0]
-                else:
-                    continue
-                username = result['username']
-                osuid = result['osuid']
-                pp = result['pp_raw']
-                in_pp = float(pp)
-                rank = result['pp_rank']
-                acc1 = round(float(result['accuracy']),2)
-                pc =  result['playcount']
-                count300 = result['count300']
-                count100 = result['count100']
-                count50 = result['count50']
-                tth = eval(count300)+eval(count50)+eval(count100)
-                self.insert_user(username,in_pp,acc1,pc,rank,tth,in_time,osuid)
-                print(uid+'插入成功')
+                    result = json.loads(res.text)  
+                    if result:         
+                        result = result[0]
+                    else:
+                        continue
+                    username = result['username']
+                    osuid = result['user_id']
+                    pp = result['pp_raw']
+                    in_pp = float(pp)
+                    rank = result['pp_rank']
+                    acc1 = round(float(result['accuracy']),2)
+                    pc =  result['playcount']
+                    count300 = result['count300']
+                    count100 = result['count100']
+                    count50 = result['count50']
+                    tth = eval(count300)+eval(count50)+eval(count100)
+                    self.insert_user(username,in_pp,acc1,pc,rank,tth,in_time,osuid)
+                    print(uid+'插入成功')
+                except:
+                    print('[%s]插入失败'%uid)
+                    traceback.print_exc()
         except:
             print('auto_inert错误')
             traceback.print_exc()

@@ -17,6 +17,7 @@ class bili():
 
     def start(self):
         self.driver = webdriver.Firefox()
+        self.driver.set_window_size(100, 100)
         # 隐式等待时间
         self.driver.implicitly_wait(10)
 
@@ -44,6 +45,6 @@ class bili():
 if __name__ == "__main__":
     bi = bili()
     bi.get_rank_chart('-inter-')
-    # bi.stop()
+    bi.stop()
 
 

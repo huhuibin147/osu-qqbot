@@ -36,14 +36,7 @@ speak_flag = [1]
 worlds_num = [10000]
 methods = {}
 
-others_github = 'https://github.com/pandolia/qqbot'
-aite = [
-    '不想理你!','你是想被dalou打爆?','你想被日吗?','你想调戏我?',
-    '再艾特我,叫dalou打你!','求求你，不要再艾特我了!','我要找幕后黑手烟你!',
-    'dalou还有幕后黑手!','有事请找幕后黑手inter!','我要日你!','哪个刁民又在为难朕',
-    'dalou在隔壁一拳打过来，打穿你!','小心我让幕后黑手ban了你!','就这几句话还玩不够啊!',
-    '我要下线了!','mdzz','pass了再说https://osu.ppy.sh/s/332532'
-    ]
+
 group_list = ['614892339','514661057','641236878']
 
 def onStartupComplete(bot):
@@ -61,24 +54,13 @@ def onInterval(bot):
 
 def onQQMessage(bot, contact, member, content):
     #contact :  ctype/qq/uin/nick/mark/card/name 
-    #群限制 Q号 614892339
     if contact.ctype == 'group':
         if contact.qq not in group_list:
-            # if '!' in content:
-            #     bot.SendTo(contact, '幕后黑手被dalou打爆,只留下一个地址:%s' % others_github)
             return
 
         #通用线程函数
         t = threading.Thread(target=_method, args=(bot, contact, member, content))
         t.start()
-        #名词解释
-        t_explain = threading.Thread(target=osu_explain,args=(bot, contact, member, content))
-        t_explain.start()
-
-        if 'dalou' in content:
-            num = random.randint(0,100)
-            if num > 98:
-                bot.SendTo(contact, '成功召唤10费dalou!')
 
         return
 
@@ -220,7 +202,7 @@ def _method(bot, contact, member, content):
             bot.SendTo(contact, 'interBot奸视列表:'+str(testuser))
         return
     elif '!check' in content:
-        bot.SendTo(contact, 'inter手动计算中...请骚等!')
+        # bot.SendTo(contact, 'inter手动计算中...请骚等!')
         uid = content[7:]
         #取qq绑定
         if not uid:
@@ -324,7 +306,7 @@ def _method(bot, contact, member, content):
                 bot.SendTo(contact, member.name+'未绑定osuid,请使用setid!')
                 return
             uid = res[5]
-        bot.SendTo(contact, 'inter去ppy找图了,请骚等...')
+        # bot.SendTo(contact, 'inter去ppy找图了,请骚等...')
         msg = tuijian(uid)
         bot.SendTo(contact, msg)
         return
@@ -409,10 +391,10 @@ def _method(bot, contact, member, content):
         try:
             key = content[4:]
             segmodel = methods['segmodel']
-            res = segmodel.most_similar(key,topn=10)
+            res = segmodel.most_similar(key,topn=5)
             msg = "%s's 相关词\n" % key
             for idx,item in enumerate(res):
-                msg += '%s.%s\n' % (idx+1, item[0])
+                msg += '%s.%s %s\n' % (idx+1, key, item[0])
             bot.SendTo(contact, msg[:-1])
         except:
             bot.SendTo(contact, '%s不在interbot的词汇表中' % key)
@@ -575,7 +557,13 @@ def speaktask2(bot):
                 msg = random.sample(msglist,1)
                 print('speak任务触发!')
                 bot.SendTo(group, msg[0])
-                
+
+#定时任务-定时训练
+from qqbot import qqbotsched
+@qqbotsched(hour='0-23/1')
+def traintask(bot):
+    chat_train()
+
 def speak_level_check(groupid):
     try:
         key = 'chatlog_%s' % groupid
@@ -1431,16 +1419,6 @@ def get_osu_qx(bot, contact, username):
         redis_client.delete(key)
         traceback.print_exc()
 
-word_list = Config.osu_words.keys()
-def osu_explain(bot, contact, member, content):
-    '''osu名词自动解释'''
-    if '是什么' in content:
-        for w in word_list:
-            if w in content:
-                msg = w + ':' + Config.osu_words[w]
-                bot.SendTo(contact, msg)
-                return
-        # bot.SendTo(contact, '我累了,不想告诉你!')
 
 def get_from_osu_user(username):
     '''查库'''

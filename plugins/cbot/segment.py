@@ -12,7 +12,7 @@ def run():
         for line in sw:
             stopwords.add(line.strip('\n'))
 
-    output = open('chat_seg.txt','w',encoding='utf-8')
+    output = open('.qqbot-tmp\plugins\cbot\chat_seg.txt','w',encoding='utf-8')
 
     texts_num = 0
 
@@ -23,7 +23,7 @@ def run():
                 if word not in stopwords:
                     output.write(word+' ')
             texts_num+=1
-            if texts_num % 10000 == 0:
+            if texts_num % 50000 == 0:
                 print('已完成前 %s 行的断词' % texts_num)
     output.close()
 
