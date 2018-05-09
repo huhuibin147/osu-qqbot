@@ -1,5 +1,5 @@
 # osu-qqbot 
-已经停止开发,迁移到interbot</br>
+已经停止开发,迁移到interbot</br></br>
 一个用于查询osu信息和统计增长的qqbot(~~现在用途只是被inter拿来同步代码~~） </br>
 基于webQQ协议实现的最简单版本Bot,有兴趣了解协议的可阅读主程序</br>
 
